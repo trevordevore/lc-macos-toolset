@@ -1,0 +1,77 @@
+library com.livecode.extensions.devore.nsfontmanager
+
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "NSFontManager"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.1.0"
+
+  private foreign handler NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
+  private foreign handler NSWorkspaceSelectFile(in pSharedWorkspace as ObjcId, in pFilename as ObjcId, in pRootedAtPath as ObjcId) returns CBool binds to "objc:NSWorkspace.-selectFile:inFileViewerRootedAtPath:"
+  private foreign handler NSWorkspaceLaunchApplication(in pSharedWorkspace as ObjcId, in pAppName as ObjcId) returns CBool binds to "objc:NSWorkspace.launchApplication:"
+
+
+  /**
+  Summary:
+
+  Parameters:
+  pFilename:
+
+  Description:
+
+
+  Returns:
+  */
+  public handler NSFontManagerAvailableFontFamilies()
+    /*
+      *r_pass = False;
+      *r_err = False;
+      const char *t_error;
+      t_error = NULL;
+
+        NSArray *t_array = [[NSFontManager sharedFontManager] availableFontFamilies];
+        *r_result = strdup([[t_array componentsJoinedByString:@"\n"] cStringUsingEncoding:NSUTF8StringEncoding]);
+    */
+  end handler
+
+
+  /**
+  Summary:
+
+  Parameters:
+  pFilename:
+
+  Description:
+
+
+  Returns:
+  */
+  public handler NSFontManagerAvailableMembersOfFontFamily()
+    /*
+      *r_pass = False;
+      *r_err = False;
+      const char *t_error;
+      t_error = NULL;
+
+        if (p_argument_count != 1)
+        t_error = kBadParamCount;
+
+        if (!t_error)
+        {
+            NSString * t_family = [NSString stringWithCString:p_arguments[0] encoding:NSUTF8StringEncoding];
+            NSArray *t_array = [[NSFontManager sharedFontManager] availableMembersOfFontFamily:t_family];
+            NSMutableArray *t_return = [NSMutableArray array];
+            for (NSArray * t_member in t_array) {
+                [t_return addObject:[t_member objectAtIndex:1]];
+            }
+            *r_result = strdup([[t_return componentsJoinedByString:@"\n"] cStringUsingEncoding:NSUTF8StringEncoding]);
+        }
+
+        if (t_error != NULL)
+      {
+        *r_result = strdup(t_error);
+      }
+    */
+  end handler
+end library

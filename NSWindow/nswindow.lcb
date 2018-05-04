@@ -1,0 +1,240 @@
+library com.livecode.extensions.devore.nswindow
+
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "NSWindow"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.1.0"
+
+  private foreign handler NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
+  private foreign handler NSWorkspaceSelectFile(in pSharedWorkspace as ObjcId, in pFilename as ObjcId, in pRootedAtPath as ObjcId) returns CBool binds to "objc:NSWorkspace.-selectFile:inFileViewerRootedAtPath:"
+  private foreign handler NSWorkspaceLaunchApplication(in pSharedWorkspace as ObjcId, in pAppName as ObjcId) returns CBool binds to "objc:NSWorkspace.launchApplication:"
+
+
+  /**
+  Summary:
+
+  Returns: Boolean
+  */
+  public handler NSWindowIsFullScreen(in pWindowId as Integer)
+    /*
+      NSWindow *theWindow = nil;
+      theWindow = [NSApp windowWithWindowNumber: pWindowID];
+      if (theWindow != nil)
+      {
+          return (([theWindow styleMask] & NSFullScreenWindowMask) == NSFullScreenWindowMask);
+      } else {
+          return false;
+      }
+    */
+  end handler
+
+
+  /**
+  Summary:
+
+  Returns: Boolean
+  */
+  public handler NSWindowToggleIsFullScreen(in pWindowId as Integer)
+    /*
+      NSWindow *theWindow = nil;
+      theWindow = [NSApp windowWithWindowNumber: pWindowID];
+
+      if (theWindow != nil)
+      {
+          [theWindow toggleFullScreen:nil];
+          return @"";
+      } else {
+          return @"could not obtain window";
+      }
+    */
+  end handler
+
+
+  /**
+  Summary:
+
+  Returns: Boolean
+  */
+  public handler NSWindowSetHasFullScreenControl(in pWindowId as Integer)
+    /*
+      NSWindow *theWindow = nil;
+      theWindow = [NSApp windowWithWindowNumber: pWindowID];
+
+      if (theWindow != nil)
+      {
+          [theWindow setCollectionBehavior: [theWindow collectionBehavior] | NSWindowCollectionBehaviorFullScreenPrimary];
+          return @"";
+      } else {
+          return @"could not obtain window";
+      }
+    */
+  end handler
+
+
+  /**
+  Summary:
+
+  Returns: Boolean
+  */
+  public handler NSWindowSetCollectionBehavior(in pWindowId as Integer)
+    /*
+      NSWindow *theWindow = nil;
+      theWindow = [NSApp windowWithWindowNumber: pWindowID];
+
+      if (theWindow != nil)
+      {
+          [theWindow setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
+          return @"";
+      } else {
+          return @"could not obtain window";
+      }
+    */
+  end handler
+
+
+  /**
+  Summary:
+
+  Returns: Boolean
+  */
+  public handler NSWindowAddToCollectionBehavior(in pWindowId as Integer)
+
+  end handler
+
+
+  /**
+  Summary:
+
+  Returns: Boolean
+  */
+  public handler NSWindowRemoveFromCollectionBehavior(in pWindowId as Integer)
+
+  end handler
+
+
+  /**
+  Summary:
+
+  Returns: Boolean
+  */
+  public handler NSWindowSetIgnoreMouseEvents(in pWindowId as Integer)
+    /*
+      NSWindow *theWindow = nil;
+      theWindow = [NSApp windowWithWindowNumber: pWindowID];
+
+      if (theWindow != nil)
+      {
+          [theWindow setIgnoresMouseEvents:pIgnore];
+          return @"";
+      } else {
+          return @"could not obtain window";
+      }
+    */
+  end handler
+
+
+  /**
+  Summary:
+
+  Parameters:
+  pFilename:
+
+  Returns: NSDictionary
+  */
+  public handler NSWindowGetRectsOfAllWindows()
+    /*
+      // http://developer.apple.com/library/mac/#documentation/Carbon/Reference/CGWindow_Reference/Reference/Functions.html%23//apple_ref/doc/uid/TP40008073-CH2-SW1
+      CGWindowListOption listOptions = kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements;
+      NSArray * t_window_list = (__bridge NSArray *)CGWindowListCopyWindowInfo(listOptions, kCGNullWindowID);
+
+        NSMutableDictionary * t_return = [NSMutableDictionary dictionary];
+
+        int t_index = 1;
+
+        for (NSDictionary * t_window_info in t_window_list) {
+            NSString * t_owner_name = nil;
+            t_owner_name = [t_window_info objectForKey:(__bridge NSString *)kCGWindowOwnerName];
+
+            if (t_owner_name != nil && !([t_owner_name caseInsensitiveCompare:@"Dock"] == NSOrderedSame)) // Ignore the dock as it takes up entire screen
+            {
+                NSMutableDictionary *t_temp = [NSMutableDictionary dictionary];
+
+
+                [t_temp setObject:[t_owner_name dataUsingEncoding:NSUTF8StringEncoding] forKey:@"owner"];
+                [t_temp setObject:[t_window_info objectForKey:(__bridge NSString *)kCGWindowLayer] forKey:@"layer"];
+                [t_temp setObject:[t_window_info objectForKey:(__bridge NSString *)kCGWindowNumber] forKey:@"id"];
+
+                CGRect bounds;
+                CGRectMakeWithDictionaryRepresentation( (__bridge CFDictionaryRef)[t_window_info objectForKey:(__bridge NSString *)kCGWindowBounds], &bounds);
+
+                NSString * t_rect = nil;
+                t_rect = [NSString stringWithFormat:@"%i,%i,%i,%i",(int)bounds.origin.x, (int)bounds.origin.y,
+                          (int)bounds.origin.x + (int)bounds.size.width, (int)bounds.origin.y + (int)bounds.size.height];
+                [t_temp setObject:t_rect forKey:@"rect"];
+
+                // window id, window layer, window owner, window name, window rect
+                NSString * t_window_name = nil;
+                t_window_name = [t_window_info objectForKey:(__bridge NSString *)kCGWindowName];
+
+                if (t_window_name == nil)
+                {
+                    // Use owner name unless it is SystemUIServer
+                    if ([t_owner_name caseInsensitiveCompare:@"SystemUIServer"])
+                    {
+                        NSRunningApplication * t_front_app = [[NSWorkspace sharedWorkspace] frontmostApplication];
+                        t_window_name = [t_front_app localizedName];
+                    }
+                }
+
+                if (t_window_name == nil)
+                {
+                    t_window_name = t_owner_name;
+                }
+
+                [t_temp setObject:[t_window_name dataUsingEncoding:NSUTF8StringEncoding] forKey:@"name"];
+
+                [t_return setObject:t_temp forKey:[NSString stringWithFormat:@"%d",t_index++]];
+
+            }
+
+        }
+
+
+        [t_window_list release];
+
+        return t_return;
+    */
+  end handler
+
+
+  /**
+  Summary:
+
+  Parameters:
+  pFilename:
+
+  Description:
+
+
+  Returns:
+  */
+  public handler NSWindowMakeWindowTopmost()
+    /*
+      NSWindow * t_nswindow = nil;
+
+      t_nswindow = [NSApp windowWithWindowNumber:pWindowID];
+      if (t_nswindow == nil)
+      {
+          return @"unable to obtain window";
+      }
+
+      [t_nswindow setLevel:NSScreenSaverWindowLevel]; //kCGMaximumWindowLevelKey] CGShieldingWindowLevel()
+      [t_nswindow makeKeyAndOrderFront:nil];
+
+      return @"";
+    */
+  end handler
+
+end library

@@ -1,0 +1,140 @@
+library com.livecode.extensions.devore.nscursor
+
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "NSCursor"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.1.0"
+
+  private foreign handler NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
+  private foreign handler NSWorkspaceSelectFile(in pSharedWorkspace as ObjcId, in pFilename as ObjcId, in pRootedAtPath as ObjcId) returns CBool binds to "objc:NSWorkspace.-selectFile:inFileViewerRootedAtPath:"
+  private foreign handler NSWorkspaceLaunchApplication(in pSharedWorkspace as ObjcId, in pAppName as ObjcId) returns CBool binds to "objc:NSWorkspace.launchApplication:"
+
+  /**
+  Summary:
+
+  Parameters:
+  pFilename:
+
+  Returns:
+  */
+  public handler NSCursorGetCursor(in pFilename as String)
+    /*
+    //"current system" as 0
+    //"current" as 1
+    //"arrow" as 2
+    //"closed hand" as 3
+    //"contextual menu" as 4
+    //"crosshair" as 5
+    //"disappearing item" as 6
+    //"drag copy" as 7
+    //"drag link" as 8
+    //"I beam" as 9
+    //"vertical I beam" as 10
+    //"open hand" as 11
+    //"not allowed" as 12
+    //"pointing hand" as 13
+    //"resize down" as 14
+    //"resize left" as 15
+    //"resize left-right" as 16
+    //"resize up" as 17
+    //"resize up-down" as 18
+
+
+    NSCursor * cursorForCursorType(int pCursorType)
+    {
+
+        switch (pCursorType) {
+            case 0:
+                return [NSCursor currentSystemCursor];
+                break;
+            case 1:
+                return [NSCursor currentCursor];
+                break;
+            case 2:
+                return [NSCursor arrowCursor];
+                break;
+            case 3:
+                return [NSCursor closedHandCursor];
+                break;
+            case 4:
+                return [NSCursor contextualMenuCursor];
+                break;
+            case 5:
+                return [NSCursor crosshairCursor];
+                break;
+            case 6:
+                return [NSCursor disappearingItemCursor];
+                break;
+            case 7:
+                return [NSCursor dragCopyCursor];
+                break;
+            case 8:
+                return [NSCursor dragLinkCursor];
+                break;
+            case 9:
+                return [NSCursor IBeamCursor];
+                break;
+            case 10:
+                return [NSCursor IBeamCursorForVerticalLayout];
+                break;
+            case 11:
+                return [NSCursor openHandCursor];
+                break;
+            case 12:
+                return [NSCursor operationNotAllowedCursor];
+                break;
+            case 13:
+                return [NSCursor pointingHandCursor];
+                break;
+            case 14:
+                return [NSCursor resizeDownCursor];
+                break;
+            case 15:
+                return [NSCursor resizeLeftCursor];
+                break;
+            case 16:
+                return [NSCursor resizeLeftRightCursor];
+                break;
+            case 17:
+                return [NSCursor resizeUpCursor];
+                break;
+            case 18:
+                return [NSCursor resizeUpDownCursor];
+                break;
+        }
+    }
+
+    NSDictionary * scapGetCursor(int pRepresentation, int pCursorType)
+    {
+        NSMutableDictionary * t_return = nil;
+        t_return = [NSMutableDictionary dictionary];
+
+        NSCursor * t_cursor = nil;
+        t_cursor = cursorForCursorType(pCursorType);
+
+        NSImage * t_cursor_image = nil;
+        t_cursor_image = [t_cursor image];
+
+        NSImageRep * t_image_rep = [[t_cursor_image representations] objectAtIndex:pRepresentation-1];
+
+        CGImageRef t_cgRef = [t_image_rep CGImageForProposedRect:NULL
+                                                 context:nil
+                                                   hints:nil];
+        NSBitmapImageRep *t_bitmap = [[NSBitmapImageRep alloc] initWithCGImage:t_cgRef];
+
+        [t_return setObject:[t_bitmap representationUsingType:NSPNGFileType properties:nil] forKey:@"image"];
+
+        NSPoint t_hotspot = [t_cursor hotSpot];
+        [t_return setObject:[NSString stringWithFormat:@"%d,%d",(int)t_hotspot.x,(int)t_hotspot.y] forKey:@"hotspot"];
+
+        NSSize t_size = t_cursor_image.size;
+        [t_return setObject:[NSString stringWithFormat:@"%d",(int)t_size.width] forKey:@"width"];
+        [t_return setObject:[NSString stringWithFormat:@"%d",(int)t_size.height] forKey:@"height"];
+
+        return t_return;
+    }
+    */
+  end handler
+end library

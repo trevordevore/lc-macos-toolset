@@ -1,0 +1,108 @@
+library com.livecode.extensions.devore.nsurl
+
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "NSURL"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.1.0"
+
+  private foreign handler NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
+  private foreign handler NSWorkspaceSelectFile(in pSharedWorkspace as ObjcId, in pFilename as ObjcId, in pRootedAtPath as ObjcId) returns CBool binds to "objc:NSWorkspace.-selectFile:inFileViewerRootedAtPath:"
+  private foreign handler NSWorkspaceLaunchApplication(in pSharedWorkspace as ObjcId, in pAppName as ObjcId) returns CBool binds to "objc:NSWorkspace.launchApplication:"
+
+  /**
+  Summary:
+
+  Parameters:
+  pFilename:
+
+  Returns:
+  */
+  public handler NSURLGetBookmarkFromURL(in pFilename as String)
+    /*
+      NSURL *theURL = [[NSURL alloc] initFileURLWithPath:pFilename];
+      NSError *error = nil;
+
+      NSData *bookmarkData = [theURL bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope
+                              includingResourceValuesForKeys:nil
+                                               relativeToURL:nil
+                                                       error:&error];
+
+      [theURL release];
+
+      if (bookmarkData == NULL)
+      {
+          bookmarkData = [@"error: unable to get bookmark data from URL" dataUsingEncoding:NSUTF8StringEncoding];
+      }
+
+      return bookmarkData;
+    */
+    variable sharedWorkspace as ObjcObject
+    variable wasSuccessful as Boolean
+
+    unsafe
+      put NSWorkspaceSharedWorkspace() into sharedWorkspace
+      put NSWorkspaceSelectFile(sharedWorkspace, StringToNSString(pFilename), StringToNSString("")) into wasSuccessful
+    end unsafe
+
+    return wasSuccessful
+  end handler
+
+
+  /**
+  Summary:
+
+  Parameters:
+  pFilename:
+
+  Description:
+
+
+  Returns: Boolean
+  */
+  public handler NSURLInitializeURLFromBookmarkData(in pAppName as String)
+    /*
+      NSError *error = nil;
+      BOOL bookmarkDataIsStale;F
+      NSURL *bookmarkFileURL = nil;
+
+      bookmarkFileURL = [NSURL URLByResolvingBookmarkData:pBookmarkData
+                                                  options:NSURLBookmarkResolutionWithSecurityScope
+                                            relativeToURL:nil
+                                      bookmarkDataIsStale:&bookmarkDataIsStale
+                                                    error:&error];
+
+      if (bookmarkFileURL == NULL) {
+          return @"error: unable to get URL from bookmark data";
+          NSLog(@"Error: %@", error);
+      } else {
+          [bookmarkFileURL startAccessingSecurityScopedResource];
+          return [bookmarkFileURL absoluteString];
+      }
+    */
+  end handler
+
+
+  /**
+  Summary:
+
+  Parameters:
+  pFilename:
+
+  Description:
+
+
+  Returns: Boolean
+  */
+  public handler NSURLStopUsingURL(in pAppName as String)
+    /*
+    // This needs to be the security scoped URL with ?applesecurityscope appended to it.
+    NSURL *theURL = [[NSURL alloc] initFileURLWithPath:pURLScopedURL];
+    [theURL stopAccessingSecurityScopedResource];
+    //NSLog(@"theURL: %@", theURL);
+
+    [theURL release];
+    */
+  end handler
+end library

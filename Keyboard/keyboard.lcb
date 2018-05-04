@@ -1,0 +1,73 @@
+library com.livecode.extensions.devore.keyboard
+
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "macOS Keyboard"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.1.0"
+
+  private foreign handler NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
+  private foreign handler NSWorkspaceSelectFile(in pSharedWorkspace as ObjcId, in pFilename as ObjcId, in pRootedAtPath as ObjcId) returns CBool binds to "objc:NSWorkspace.-selectFile:inFileViewerRootedAtPath:"
+  private foreign handler NSWorkspaceLaunchApplication(in pSharedWorkspace as ObjcId, in pAppName as ObjcId) returns CBool binds to "objc:NSWorkspace.launchApplication:"
+
+
+  /**
+  Summary:
+
+  Parameters:
+  pFilename:
+
+  Description:
+
+
+  Returns: Binary
+  */
+  public handler macOSVirtualKeyCodeToUnicodeChar()
+    /*
+      NSString *t_return = nil;
+      NSString *t_error = nil;
+      OSStatus error;
+      const UCKeyboardLayout *uchrHandle = NULL;
+      KeyboardLayoutRef keyboardLayoutRef = NULL;
+      KeyboardLayoutKind layoutKind;
+      UniChar unicodeChar[255];
+        TISInputSourceRef currentKeyboard = nil;
+
+
+      if (t_error == nil) {
+            currentKeyboard = TISCopyCurrentKeyboardLayoutInputSource(); //TISCopyCurrentKeyboardInputSource();
+            CFDataRef layoutData = (CFDataRef)TISGetInputSourceProperty(currentKeyboard, kTISPropertyUnicodeKeyLayoutData);
+            if (layoutData == NULL)
+                t_error = @"unable to get current keyboard layout";
+            else
+                uchrHandle = (const UCKeyboardLayout *)CFDataGetBytePtr(layoutData);
+      }
+
+      if (t_error == nil) {
+        UInt32 deadKeyState = 0;
+        UniCharCount actualStringLength;
+        error = UCKeyTranslate (uchrHandle,
+                                    pKeyCode,
+                                    kUCKeyActionDown,
+                                    (UInt32)0,
+                                    LMGetKbdType(),
+                                    kUCKeyTranslateNoDeadKeysBit,
+                                    &deadKeyState,
+                                    255, // Only 1 key allowed
+                                    &actualStringLength,
+                                    unicodeChar);
+        if (error == noErr) {
+          t_return = [NSString stringWithCharacters:unicodeChar length:actualStringLength];
+        }
+       }
+
+        CFRelease(currentKeyboard);
+
+        if (t_error != nil)
+            return [t_error dataUsingEncoding:NSUTF8StringEncoding];
+        else
+            return [t_return dataUsingEncoding:NSUTF16StringEncoding];
+    */
+  end handler
+end library

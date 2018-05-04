@@ -1,0 +1,52 @@
+library com.livecode.extensions.devore.nsapp
+
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "NSApp"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.1.0"
+
+  private foreign handler NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
+  private foreign handler NSWorkspaceSelectFile(in pSharedWorkspace as ObjcId, in pFilename as ObjcId, in pRootedAtPath as ObjcId) returns CBool binds to "objc:NSWorkspace.-selectFile:inFileViewerRootedAtPath:"
+  private foreign handler NSWorkspaceLaunchApplication(in pSharedWorkspace as ObjcId, in pAppName as ObjcId) returns CBool binds to "objc:NSWorkspace.launchApplication:"
+
+
+  /**
+  Summary:
+
+  Parameters:
+  pFilename:
+
+  Description:
+
+
+  Returns:
+  */
+  public handler NSAppActivateIgnoringOtherApps()
+    /*
+      [NSApp activateIgnoringOtherApps:YES];
+    */
+  end handler
+
+
+  public handler NSAppSetPresentationOptions
+    /*
+      static NSApplicationPresentationOptions s_presentation_options = NSApplicationPresentationDefault;
+
+      NSString * scapInitializeSession()
+      {
+          s_presentation_options = [NSApp presentationOptions];
+          [NSApp setPresentationOptions: NSApplicationPresentationDisableProcessSwitching | NSApplicationPresentationDisableAppleMenu
+           | NSApplicationPresentationHideDock | NSApplicationPresentationHideMenuBar];
+      }
+    */
+  end handler
+
+
+  public handler NSAppGetPresentationOptions
+    /*
+      [NSApp setPresentationOptions:s_presentation_options];
+    */
+  end handler
+end library

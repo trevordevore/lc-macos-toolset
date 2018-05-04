@@ -1,0 +1,51 @@
+library com.livecode.extensions.devore.nsrunningapplication
+
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "NSRunningApplication"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.1.0"
+
+  private foreign handler NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
+  private foreign handler NSWorkspaceSelectFile(in pSharedWorkspace as ObjcId, in pFilename as ObjcId, in pRootedAtPath as ObjcId) returns CBool binds to "objc:NSWorkspace.-selectFile:inFileViewerRootedAtPath:"
+  private foreign handler NSWorkspaceLaunchApplication(in pSharedWorkspace as ObjcId, in pAppName as ObjcId) returns CBool binds to "objc:NSWorkspace.launchApplication:"
+
+
+  /**
+  Summary:
+
+  Parameters:
+  pFilename:
+
+  Description:
+
+
+  Returns:
+  */
+  public handler NSRunningApplicationActivateWithOptions()
+    /*
+      NSString *t_error = nil;
+      pid_t t_psn = (pid_t) pPSN;
+
+      if (t_error == nil) {
+        NSRunningApplication * t_app = nil;
+            t_app = [NSRunningApplication runningApplicationWithProcessIdentifier:t_psn];
+            if (t_app != nil)
+                t_psn = [t_app activateWithOptions:NSApplicationActivateIgnoringOtherApps];
+            else
+                t_error = @"unable to set current process";
+      }
+
+      if (t_error == nil)
+      {
+        return @"";
+      }
+      else
+      {
+        // Return error message as string to Revolution
+        return t_error;
+      }
+    */
+  end handler
+end library
