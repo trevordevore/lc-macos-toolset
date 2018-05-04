@@ -7,9 +7,33 @@ library com.livecode.extensions.devore.nsapp
   metadata author is "Trevor DeVore"
   metadata version is "0.1.0"
 
-  private foreign handler NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
-  private foreign handler NSWorkspaceSelectFile(in pSharedWorkspace as ObjcId, in pFilename as ObjcId, in pRootedAtPath as ObjcId) returns CBool binds to "objc:NSWorkspace.-selectFile:inFileViewerRootedAtPath:"
-  private foreign handler NSWorkspaceLaunchApplication(in pSharedWorkspace as ObjcId, in pAppName as ObjcId) returns CBool binds to "objc:NSWorkspace.launchApplication:"
+  private foreign handler _NSApplicationSharedApplication() returns ObjcId binds to "objc:NSApplication.+sharedApplication"
+
+  private foreign handler _NSApplicationIsActive(in pSharedApp as ObjcId) returns CBool binds to "objc:NSApplication.isActive"
+
+  private foreign handler _NSAppActivateIgnoringOtherApps(in pSharedApp as ObjcId, in pBoolean as CBool) returns nothing binds to "objc:NSApplication.-activateIgnoringOtherApps:"
+
+  private foreign handler _NSAppSetPresentationOptions(in pSharedApp as ObjcId, in pOptions as CInt) returns nothing binds to "objc:NSApplication.-setPresentationOptions:"
+  private foreign handler _NSAppGetPresentationOptions(in pSharedApp as ObjcId) returns CInt binds to "objc:NSApplication.-presentationOptions"
+  private foreign handler _NSAppGetCurrentSystemPresentationOptions(in pSharedApp as ObjcId) returns CInt binds to "objc:NSApplication.-currentSystemPresentationOptions"
+
+  private foreign handler _NSAppRequestUserAttention(in pSharedApp as ObjcId, in pRequestType as CInt) returns CInt binds to "objc:NSApplication.-requestUserAttention:"
+  private foreign handler _NSAppCancelUserAttentionRequest(in pSharedApp as ObjcId, in pRequestIdentifier as CInt) returns nothing binds to "objc:NSApplication.-cancelUserAttentionRequest:"
+
+  public constant kPresentationTypes is ["auto-hide dock", "hide dock", "auto-hide menubar", "hide menubar", "disable apple menu", "disable process switching", "disable force quit", "disable session termination", "disable hide application", "disable menubar transparency", "fullscreen", "auto-hide toolbar"]
+
+
+  public handler NSAppIsActive() returns Boolean
+    variable nsApp as ObjcObject
+    variable isActive as Boolean
+
+    unsafe
+      put _NSApplicationSharedApplication() into nsApp
+      put _NSApplicationIsActive(nsApp) into isActive
+    end unsafe
+
+    return isActive
+  end handler
 
 
   /**
@@ -23,30 +47,202 @@ library com.livecode.extensions.devore.nsapp
 
   Returns:
   */
-  public handler NSAppActivateIgnoringOtherApps()
-    /*
-      [NSApp activateIgnoringOtherApps:YES];
-    */
+  public handler NSAppActivateIgnoringOtherApps(in pBoolean as Boolean)
+    variable nsApp as ObjcObject
+
+    unsafe
+      put _NSApplicationSharedApplication() into nsApp
+      _NSAppActivateIgnoringOtherApps(nsApp, pBoolean)
+    end unsafe
   end handler
 
 
-  public handler NSAppSetPresentationOptions
-    /*
-      static NSApplicationPresentationOptions s_presentation_options = NSApplicationPresentationDefault;
+  /**
+  Summary:
+  */
+  public handler NSAppRequestUserAttention(in pRequestUserAttentionType as String) returns Integer
+    // NSCriticalRequest = 0
+    // NSInformationalRequest = 10
+    variable nsApp as ObjcObject
+    variable requestType as Integer
+    variable tIdentifier as Integer
 
-      NSString * scapInitializeSession()
-      {
-          s_presentation_options = [NSApp presentationOptions];
-          [NSApp setPresentationOptions: NSApplicationPresentationDisableProcessSwitching | NSApplicationPresentationDisableAppleMenu
-           | NSApplicationPresentationHideDock | NSApplicationPresentationHideMenuBar];
-      }
-    */
+    if pRequestUserAttentionType is "critical" then
+      put 0 into requestType
+    else
+      put 10 into requestType
+    end if
+
+    unsafe
+      put _NSApplicationSharedApplication() into nsApp
+      put _NSAppRequestUserAttention(nsApp, requestType) into tIdentifier
+    end unsafe
+
+    return tIdentifier
   end handler
 
 
-  public handler NSAppGetPresentationOptions
-    /*
-      [NSApp setPresentationOptions:s_presentation_options];
-    */
+  /**
+  Summary: Cancels a request for user attention.
+  */
+  public handler NSAppCancelUserAttentionRequest(in pRequestIdentifier as Integer)
+    variable nsApp as ObjcObject
+
+    unsafe
+      put _NSApplicationSharedApplication() into nsApp
+      _NSAppCancelUserAttentionRequest(nsApp, pRequestIdentifier)
+    end unsafe
+  end handler
+
+
+  /**
+  Summary: Sets the list of presenation options that should be in effect for the system when this app is active.
+
+  Parameters:
+  pOptions: Comma-delimited list of options to set.
+
+  Description:
+  pOptions can be one or more of the following: `auto-hide dock`, `hide dock`, `auto-hide menubar`, `hide menubar`, `disable apple menu`, `disable process switching`, `disable force quit`, `disable session termination`, `disable hide application`, `disable menubar transparency`, `fullscreen`, `auto-hide toolbar`.
+
+  Note that some options require that other options be set as well. Refer to the Apple documentation for more information:
+  https://developer.apple.com/documentation/appkit/nsapplicationpresentationoptions?language=objc
+
+  Returns: nothing
+  */
+  public handler NSAppSetPresentationOptions(in pOptions as String)
+    variable nsApp as ObjcObject
+    variable tOptions as List
+    variable tOption as String
+    variable tPresentationOptions as Integer
+
+    split pOptions by "," into tOptions
+
+    repeat for each element tOption in tOptions
+      if tOption is "default" then
+        put 0 into tPresentationOptions
+        exit repeat
+      else
+        put tPresentationOptions bitwise or _presTypes(tOption) into tPresentationOptions
+      end if
+    end repeat
+
+    unsafe
+      put _NSApplicationSharedApplication() into nsApp
+      _NSAppSetPresentationOptions(nsApp, tPresentationOptions)
+    end unsafe
+  end handler
+
+
+  /**
+  Summary: Returns the list of presenation options that should be in effect for the system when this app is active.
+
+  Returns: Comma-delimited list of options
+  */
+  public handler NSAppGetPresentationOptions() returns String
+    variable nsApp as ObjcObject
+    variable tPresentationOptions as Integer
+    variable tOption as String
+    variable tOptions as List
+    variable tOptionsStr as String
+
+    unsafe
+      put _NSApplicationSharedApplication() into nsApp
+      put _NSAppGetPresentationOptions(nsApp) into tPresentationOptions
+    end unsafe
+
+    if (tPresentationOptions is 0) then
+      push "default" onto tOptions
+    else
+      repeat for each element tOption in kPresentationTypes
+        if tPresentationOptions bitwise and _presTypes(tOption) > 0 then
+          push tOption onto tOptions
+        end if
+      end repeat
+    end if
+
+    combine tOptions with "," into tOptionsStr
+
+    return tOptionsStr
+  end handler
+
+
+  /**
+  Summary: Returns the set of presentation options that are currently in effect for the system.
+
+  Returns: Comma-delimited list of options
+  */
+  public handler NSAppGetCurrentSystemPresentationOptions() returns String
+    variable nsApp as ObjcObject
+    variable tPresentationOptions as Integer
+
+    unsafe
+      put _NSApplicationSharedApplication() into nsApp
+      put _NSAppGetCurrentSystemPresentationOptions(nsApp) into tPresentationOptions
+    end unsafe
+
+    return _presentationOptionsToString(tPresentationOptions)
+  end handler
+
+
+  /**
+  Summary: Converts the presentationOptions integer to a string representation of the options.
+
+  Returns: Comma-delimited list of options
+  */
+  private handler _presentationOptionsToString(in pPresentationOptions as Integer) returns String
+    variable tOption as String
+    variable tOptions as List
+    variable tOptionsStr as String
+
+    if (pPresentationOptions is 0) then
+      push "default" onto tOptions
+    else
+      repeat for each element tOption in kPresentationTypes
+        if pPresentationOptions bitwise and _presTypes(tOption) > 0 then
+          push tOption onto tOptions
+        end if
+      end repeat
+    end if
+
+    combine tOptions with "," into tOptionsStr
+
+    return tOptionsStr
+  end handler
+
+
+  /**
+  Summary: Returns the bitshifted value for constants.
+
+  Description:
+  https://developer.apple.com/documentation/appkit/nsapplicationpresentationoptions?language=objc
+  */
+  private handler _presTypes(in pType as String) returns Integer
+    if pType is "auto-hide dock" then
+      return 1 shifted left by 0 bitwise
+    else if pType is "hide dock" then
+      return 1 shifted left by 1 bitwise
+    else if pType is "auto-hide menubar" then
+      return 1 shifted left by 2 bitwise
+    else if pType is "hide menubar" then
+      return 1 shifted left by 3 bitwise
+    else if pType is "disable apple menu" then
+      return 1 shifted left by 4 bitwise
+    else if pType is "disable process switching" then
+      return 1 shifted left by 5 bitwise
+    else if pType is "disable force quit" then
+      return 1 shifted left by 6 bitwise
+    else if pType is "disable session termination" then
+      return 1 shifted left by 7 bitwise
+    else if pType is "disable hide application" then
+      return 1 shifted left by 8 bitwise
+    else if pType is "disable menubar transparency" then
+      return 1 shifted left by 9 bitwise
+    else if pType is "fullscreen" then
+      return 1 shifted left by 10 bitwise
+    else if pType is "auto-hide toolbar" then
+      return 1 shifted left by 11 bitwise
+    else // "default"
+      return 0
+    end if
   end handler
 end library
