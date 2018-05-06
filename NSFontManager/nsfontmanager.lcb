@@ -7,9 +7,7 @@ library com.livecode.extensions.devore.nsfontmanager
   metadata author is "Trevor DeVore"
   metadata version is "0.1.0"
 
-  private foreign handler NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
-  private foreign handler NSWorkspaceSelectFile(in pSharedWorkspace as ObjcId, in pFilename as ObjcId, in pRootedAtPath as ObjcId) returns CBool binds to "objc:NSWorkspace.-selectFile:inFileViewerRootedAtPath:"
-  private foreign handler NSWorkspaceLaunchApplication(in pSharedWorkspace as ObjcId, in pAppName as ObjcId) returns CBool binds to "objc:NSWorkspace.launchApplication:"
+  private foreign handler _NSFontManagerSharedFontManager() returns ObjcId binds to "objc:NSFontManager.+sharedFontManager"
 
 
   /**
