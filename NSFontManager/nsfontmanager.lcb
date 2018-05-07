@@ -1,75 +1,195 @@
-library com.livecode.extensions.devore.nsfontmanager
+library community.livecode.trevordevore.nsfontmanager
 
   use com.livecode.foreign
   use com.livecode.objc
+  use community.livecode.trevordevore.nsarray
 
   metadata title is "NSFontManager"
   metadata author is "Trevor DeVore"
   metadata version is "0.1.0"
 
-  private foreign handler _NSFontManagerSharedFontManager() returns ObjcId binds to "objc:NSFontManager.+sharedFontManager"
+  private foreign handler ObjC_NSFontManagerSharedFontManager() returns ObjcRetainedId binds to "objc:NSFontManager.+sharedFontManager"
+  private foreign handler ObjC_NSFontManagerAvailableFontFamilies(in pObj as ObjcId) returns ObjcId binds to "objc:NSFontManager.-availableFontFamilies"
+  private foreign handler ObjC_NSFontManagerAvailableFontNamesWithTraits(in pObj as ObjcId, in pOptions as CLong) returns ObjcId binds to "objc:NSFontManager.-availableFontNamesWithTraits:"
+  private foreign handler ObjC_NSFontManagerAvailableMembersOfFontFamily(in pObj as ObjcId, in pFamily as ObjcId) returns ObjcId binds to "objc:NSFontManager.-availableMembersOfFontFamily:"
+
+  private constant kTraits is ["bold", "compressed", "condensed", "expanded", "fixed pitch", "italic", "narrow", "non-standard character set", "poster", "small caps", "unbold", "unitalic"]
 
 
   /**
-  Summary:
+  Summary: Returns the list of available font traits.
 
-  Parameters:
-  pFilename:
-
-  Description:
-
-
-  Returns:
+  Returns: Comma-delimited list.
   */
-  public handler NSFontManagerAvailableFontFamilies()
-    /*
-      *r_pass = False;
-      *r_err = False;
-      const char *t_error;
-      t_error = NULL;
+  public handler NSFontManagerFontTraits() returns String
+    variable tString as String
 
-        NSArray *t_array = [[NSFontManager sharedFontManager] availableFontFamilies];
-        *r_result = strdup([[t_array componentsJoinedByString:@"\n"] cStringUsingEncoding:NSUTF8StringEncoding]);
-    */
+    combine kTraits with "," into tString
+    return tString
   end handler
 
 
   /**
-  Summary:
-
-  Parameters:
-  pFilename:
+  Summary: Returns a list of font names available in the system.
 
   Description:
 
 
-  Returns:
+  Returns: CR-delimited list
   */
-  public handler NSFontManagerAvailableMembersOfFontFamily()
-    /*
-      *r_pass = False;
-      *r_err = False;
-      const char *t_error;
-      t_error = NULL;
+  public handler NSFontManagerAvailableFontFamilies()
+    variable tFontManager as ObjcObject
+    variable tFontFamilies as optional ObjcObject
+    variable tList as List
+    variable tString as String
 
-        if (p_argument_count != 1)
-        t_error = kBadParamCount;
+    unsafe
+      put ObjC_NSFontManagerSharedFontManager() into tFontManager
+      put ObjC_NSFontManagerAvailableFontFamilies(tFontManager) into tFontFamilies
+    end unsafe
 
-        if (!t_error)
-        {
-            NSString * t_family = [NSString stringWithCString:p_arguments[0] encoding:NSUTF8StringEncoding];
-            NSArray *t_array = [[NSFontManager sharedFontManager] availableMembersOfFontFamily:t_family];
-            NSMutableArray *t_return = [NSMutableArray array];
-            for (NSArray * t_member in t_array) {
-                [t_return addObject:[t_member objectAtIndex:1]];
-            }
-            *r_result = strdup([[t_return componentsJoinedByString:@"\n"] cStringUsingEncoding:NSUTF8StringEncoding]);
-        }
+    if tFontFamilies is not nothing then
+      put ListFromNSArray(tFontFamilies) into tList
+      sort tList in ascending text order
+      combine tList with "\n" into tString
+      return tString
+    else
+      return ""
+    end if
+  end handler
 
-        if (t_error != NULL)
-      {
-        *r_result = strdup(t_error);
-      }
-    */
+
+  /**
+  Summary: Returns a list of font names available in the system filtered by traits
+
+  Description:
+  Returns the names of fonts available in the system whose traits are described
+  exactly by the given font mask.
+
+
+  Returns: CR-delimited list
+  */
+  public handler NSFontManagerAvailableFontNamesWithTraits(in pOptions as String)
+    variable tOptions as List
+    variable tOption as String
+    variable tFontTraits as Integer
+
+    variable tFontManager as ObjcObject
+    variable tFontFamilies as optional ObjcObject
+    variable tList as List
+    variable tString as String
+
+    split pOptions by "," into tOptions
+    repeat for each element tOption in tOptions
+      put tFontTraits bitwise or _fontTraitMaskTypes(tOption) into tFontTraits
+    end repeat
+
+    unsafe
+      put ObjC_NSFontManagerSharedFontManager() into tFontManager
+      put ObjC_NSFontManagerAvailableFontNamesWithTraits(tFontManager, tFontTraits) into tFontFamilies
+    end unsafe
+
+    if tFontFamilies is not nothing then
+      put ListFromNSArray(tFontFamilies) into tList
+      sort tList in ascending text order
+      combine tList with "\n" into tString
+      return tString
+    else
+      return ""
+    end if
+  end handler
+
+
+  /**
+  Summary: Returns an array containing each available member of a font family.
+
+  Parameters:
+  pFamily: The name of the font family as returned by NSFontManagerAvailableFontFamilies().
+
+  Description:
+  A font family is made of up 1 or more members. Each memeber has a name, description, font weight, and font traits.
+
+  Returns: Numerically indexed array. Each numeric key has four keys: `name`, `description`, `weight`, and `traits`.
+  */
+  public handler NSFontManagerAvailableMembersOfFontFamily(in pFamily as String) returns Array
+    variable tFontManager as ObjcObject
+    variable tFontFamilies as optional ObjcObject
+
+    unsafe
+      put ObjC_NSFontManagerSharedFontManager() into tFontManager
+      put ObjC_NSFontManagerAvailableMembersOfFontFamily(tFontManager, StringToNSString(pFamily)) into tFontFamilies
+    end unsafe
+
+    if tFontFamilies is not nothing then
+      variable tKey as String
+      variable tList as List
+      variable tMember as List
+      variable tArray as Array
+      variable tIndex as Integer
+      variable tOption as String
+      variable tOptions as List
+      variable tTrait as Number
+
+      put ListFromNSArray(tFontFamilies) into tList
+      repeat for each element tMember in tList
+
+        put the empty list into tOptions
+
+        add 1 to tIndex
+        put tIndex formatted as string into tKey
+        put the empty array into tArray[tKey]
+
+        put element 1 of tMember into tArray[tKey]["name"]
+        put element 2 of tMember into tArray[tKey]["description"]
+        put element 3 of tMember into tArray[tKey]["weight"]
+
+        repeat for each element tOption in kTraits
+          if element 4 of tMember bitwise and _fontTraitMaskTypes(tOption) > 0 then
+            push tOption onto tOptions
+          end if
+        end repeat
+
+        combine tOptions with "," into tArray[tKey]["traits"]
+      end repeat
+
+      return tArray
+    else
+      return the empty array
+    end if
+  end handler
+
+
+  /**
+  Summary: Returns the bitshifted value for constants.
+
+  Description:
+  https://developer.apple.com/documentation/appkit/nsfonttraitmask?language=objc
+  */
+  private handler _fontTraitMaskTypes(in pType as String) returns Integer
+    if pType is "bold" then
+      return 0x00000002
+    else if pType is "compressed" then
+      return 0x00000200
+    else if pType is "condensed" then
+      return 0x00000040
+    else if pType is "expanded" then
+      return 0x00000020
+    else if pType is "fixed pitch" then
+      return 0x00000400
+    else if pType is "italic" then
+      return 0x00000001
+    else if pType is "narrow" then
+      return 0x00000010
+    else if pType is "non-standard character set" then
+      return 0x00000008
+    else if pType is "poster" then
+      return 0x00000100
+    else if pType is "small caps" then
+      return 0x00000080
+    else if pType is "unbold" then
+      return 0x00000004
+    else if pType is "unitalic" then
+      return 0x01000000
+    end if
   end handler
 end library
