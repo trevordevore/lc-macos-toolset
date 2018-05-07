@@ -15,11 +15,17 @@ library com.livecode.extensions.devore.nsurl
   private foreign handler ObjC_NSURLBookMarkDataWithOptions(in pNSURL as ObjcId, in pOptions as CULong, in pValuesForKeys as optional ObjcId, in pRelativeUrl as optional ObjcId, out pError as ObjcId) returns ObjcId binds to "objc:NSURL.-bookmarkDataWithOptions:includingResourceValuesForKeys:relativeToURL:error:"
 
   /**
-  Summary:
+  Summary: Returns bookmark data for a file.
 
   Parameters:
   pFilename:
   pOptions: "minimal", "bookmark file", "security scope", "read only access"
+
+  Description:
+  This function can be used for accessing files across sessions in a sandbox environment. If you pass in
+  "security scope" then binary data is returned that can be stored and passed to
+  NSURLInitializeURLFromBookmarkData the next time your application runs. Your application will then have
+  access to the file without having to prompt the user again.
 
   Returns:
   */
