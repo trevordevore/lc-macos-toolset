@@ -13,6 +13,10 @@ library com.livecode.extensions.devore.nsurl
   private foreign handler ObjC_NSURLInitFileURLWithPath(in pObj as ObjcId, in pFilename as ObjcId) returns ObjcId binds to "objc:NSURL.-initFileURLWithPath:"
   private foreign handler ObjC_NSURLInitFileURLWithPathWithOptions(in pFilename as ObjcId, pIsDirectory as CBool) returns ObjcId binds to "objc:NSURL.-initFfileURLWithPath:isDirectory:"
   private foreign handler ObjC_NSURLBookMarkDataWithOptions(in pNSURL as ObjcId, in pOptions as CULong, in pValuesForKeys as optional ObjcId, in pRelativeUrl as optional ObjcId, out pError as ObjcId) returns ObjcId binds to "objc:NSURL.-bookmarkDataWithOptions:includingResourceValuesForKeys:relativeToURL:error:"
+  private foreign handler ObjC_NSURLInitByResolvingBookmarkData(in pNSURL as ObjcId, in pBookmarkData as ObjcId, in pOptions as CULong, in pRelativeURL as optional ObjcId, out pBookmarkDataIsStale as CBool, out pError as ObjcId) returns ObjcId binds to "objc:NSURL.-initByResolvingBookmarkData:options:relativeToURL:bookmarkDataIsStale:error:"
+  private foreign handler ObjC_NSURLAbsoluteString(in pNSURL as ObjcId) returns ObjcId binds to "objc:NSURL.-absoluteString"
+  private foreign handler ObjC_NSURLStartAccessingSecurityScopedResource(in pNSURL as ObjcId) returns CBool binds to "objc:NSURL.-startAccessingSecurityScopedResource"
+  private foreign handler ObjC_NSURLStopAccessingSecurityScopedResource(in pNSURL as ObjcId) returns nothing binds to "objc:NSURL.stopAccessingSecurityScopedResource"
 
   /**
   Summary: Returns bookmark data for a file.
@@ -29,27 +33,31 @@ library com.livecode.extensions.devore.nsurl
 
   Returns:
   */
-  public handler NSURLGetBookmarkDataWithOptions(in pFilename as String, in pOptions as String) returns optional Data
+  public handler NSURLGetBookmarkDataWithOptions(in pFilename as String, in pOptions as String, in pRelativeToURL as String) returns optional Data
     variable tOptions as List
     variable tOption as String
     variable tBookmarkOptions as Integer
 
     variable tNSURL as optional ObjcObject
+    variable tRelativeToURL as optional ObjcObject
     variable tNSData as optional ObjcObject
     variable tNSError as optional ObjcObject
 
     split pOptions by "," into tOptions
-
     repeat for each element tOption in tOptions
       put tBookmarkOptions bitwise or _bookmarkOptionTypes(tOption) into tBookmarkOptions
     end repeat
+
+    if pRelativeToURL is not empty then
+      put StringToNSString(pRelativeToURL) into tRelativeToURL
+    end if
 
     unsafe
       put ObjC_NSURLAlloc() into tNSURL
       put ObjC_NSDataAlloc() into tNSData
       put ObjC_NSURLInitFileURLWithPath(tNSURL, StringToNSString(pFilename)) into tNSURL
       if tNSURL is not nothing then
-        put ObjC_NSURLBookMarkDataWithOptions(tNSURL, tBookmarkOptions, nothing, nothing, tNSError) into tNSData
+        put ObjC_NSURLBookMarkDataWithOptions(tNSURL, tBookmarkOptions, nothing, tRelativeToURL, tNSError) into tNSData
       end if
     end unsafe
 
@@ -80,20 +88,70 @@ library com.livecode.extensions.devore.nsurl
 
 
   /**
-  Summary:
+  Summary: Uses data from NSURLGetBookmarkDataWithOptions() to restore access to a file in a sandboxed application.
 
   Parameters:
-  pFilename:
+  pBookmarkData:
+  pOptions: security scope", "without ui", "without mounting"
 
   Description:
-
+  If you store data returned from NSURLGetBookmarkDataWithOptions() between sessions you can use this
+  handler to gain access to a file when your application starts up.
 
   Returns: Boolean
   */
-  public handler NSURLInitializeURLFromBookmarkData(in pAppName as String)
+  public handler NSURLInitializeURLFromBookmarkData(in pBookmarkData as Data, in pOptions as String, in pRelativeToURL as String) returns String
+    variable tOptions as List
+    variable tOption as String
+    variable tBookmarkOptions as Integer
+    variable tGainedAccess as Boolean
+
+    variable tNSURL as optional ObjcObject
+    variable tRelativeToURL as optional ObjcObject
+    variable tBookmarkDataIsStale as Boolean
+    variable tNSData as optional ObjcObject
+    variable tNSError as optional ObjcObject
+    variable tFilename as ObjcObject
+
+    put DataToNSData(pBookmarkData) into tNSData
+    if pRelativeToURL is not empty then
+      put StringToNSString(pRelativeToURL) into tRelativeToURL
+    end if
+
+    split pOptions by "," into tOptions
+    repeat for each element tOption in tOptions
+      put tBookmarkOptions bitwise or _bookmarkResolutionOptionTypes(tOption) into tBookmarkOptions
+    end repeat
+
+    if tNSData is not nothing then
+      unsafe
+        put ObjC_NSURLAlloc() into tNSURL
+        put ObjC_NSURLInitByResolvingBookmarkData(tNSURL, tNSData, tBookmarkOptions, tRelativeToURL, tBookmarkDataIsStale, tNSError) into tNSURL
+        if tBookmarkDataIsStale then
+          log "stale"
+        else
+          if tNSURL is not nothing then
+            put ObjC_NSURLStartAccessingSecurityScopedResource(tNSURL) into tGainedAccess
+            if tGainedAccess then
+              put ObjC_NSURLAbsoluteString(tNSURL) into tFilename
+            else
+              log "unable to gain access to file"
+            end if
+          end if
+        end if
+      end unsafe
+    end if
+
+    if tNSError is not nothing then
+      log NSErrorLocalizedFailureReason(tNSError)
+    else if tFilename is not nothing then
+      return StringFromNSString(tFilename)
+    else
+      return ""
+    end if
     /*
       NSError *error = nil;
-      BOOL bookmarkDataIsStale;F
+      BOOL bookmarkDataIsStale;
       NSURL *bookmarkFileURL = nil;
 
       bookmarkFileURL = [NSURL URLByResolvingBookmarkData:pBookmarkData
@@ -114,19 +172,28 @@ library com.livecode.extensions.devore.nsurl
 
 
   /**
-  Summary:
+  Summary: Revokes access to the resource pointed to by a security-scoped URL.
 
   Parameters:
-  pFilename:
+  pFilename: A file path returned by NSURLInitializeURLFromBookmarkData()
 
   Description:
-
+  When your application no longer needs access to a file or directy that you requested access to using
+  NSURLInitializeURLFromBookmarkData() then you must revoke the access using this handler.
 
   Returns: Boolean
   */
-  public handler NSURLStopUsingURL(in pAppName as String)
+  public handler NSURLStopAccessingSecurityScopedResource(in pFilename as String)
+    variable tNSURL as optional ObjcObject
+
+    unsafe
+      put ObjC_NSURLAlloc() into tNSURL
+      put ObjC_NSURLInitFileURLWithPath(tNSURL, StringToNSString(pFilename)) into tNSURL
+      if tNSURL is not nothing then
+        ObjC_NSURLStopAccessingSecurityScopedResource(tNSURL)
+      end if
+    end unsafe
     /*
-    // This needs to be the security scoped URL with ?applesecurityscope appended to it.
     NSURL *theURL = [[NSURL alloc] initFileURLWithPath:pURLScopedURL];
     [theURL stopAccessingSecurityScopedResource];
     //NSLog(@"theURL: %@", theURL);
@@ -151,6 +218,23 @@ library com.livecode.extensions.devore.nsurl
       return 1 shifted left by 11 bitwise
     else if pType is "read only access" then
       return 1 shifted left by 12 bitwise
+    end if
+  end handler
+
+
+  /**
+  Summary: Returns the bitshifted value for constants.
+
+  Description:
+  https://developer.apple.com/documentation/foundation/nsurlbookmarkresolutionoptions?language=objc
+  */
+  private handler _bookmarkResolutionOptionTypes(in pType as String) returns CULong
+    if pType is "without ui" then
+      return 1 shifted left by 8 bitwise
+    else if pType is "without mounting" then
+      return 1 shifted left by 9 bitwise
+    else if pType is "security scope" then
+      return 1 shifted left by 10 bitwise
     end if
   end handler
 end library
