@@ -1,4 +1,4 @@
-library com.livecode.extensions.devore.nsapp
+library community.livecode.trevordevore.nsapp
 
   use com.livecode.foreign
   use com.livecode.objc
@@ -20,7 +20,20 @@ library com.livecode.extensions.devore.nsapp
   private foreign handler _NSAppRequestUserAttention(in pSharedApp as ObjcId, in pRequestType as CInt) returns CInt binds to "objc:NSApplication.-requestUserAttention:"
   private foreign handler _NSAppCancelUserAttentionRequest(in pSharedApp as ObjcId, in pRequestIdentifier as CInt) returns nothing binds to "objc:NSApplication.-cancelUserAttentionRequest:"
 
-  public constant kPresentationTypes is ["auto-hide dock", "hide dock", "auto-hide menubar", "hide menubar", "disable apple menu", "disable process switching", "disable force quit", "disable session termination", "disable hide application", "disable menubar transparency", "fullscreen", "auto-hide toolbar"]
+  private constant kPresentationTypes is ["auto-hide dock", "hide dock", "auto-hide menubar", "hide menubar", "disable apple menu", "disable process switching", "disable force quit", "disable session termination", "disable hide application", "disable menubar transparency", "fullscreen", "auto-hide toolbar"]
+
+
+  /**
+  Summary: Returns the list of available presentation types.
+
+  Returns: Comma-delimited list.
+  */
+  public handler NSAppPresentationTypes() returns String
+    variable tString as String
+
+    combine kPresentationTypes with "," into tString
+    return tString
+  end handler
 
 
   public handler NSAppIsActive() returns Boolean
