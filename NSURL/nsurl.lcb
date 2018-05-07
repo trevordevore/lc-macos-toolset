@@ -2,24 +2,56 @@ library com.livecode.extensions.devore.nsurl
 
   use com.livecode.foreign
   use com.livecode.objc
+  use community.livecode.trevordevore.nserror
+  use community.livecode.trevordevore.nsdata
 
   metadata title is "NSURL"
   metadata author is "Trevor DeVore"
   metadata version is "0.1.0"
 
-  private foreign handler NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
-  private foreign handler NSWorkspaceSelectFile(in pSharedWorkspace as ObjcId, in pFilename as ObjcId, in pRootedAtPath as ObjcId) returns CBool binds to "objc:NSWorkspace.-selectFile:inFileViewerRootedAtPath:"
-  private foreign handler NSWorkspaceLaunchApplication(in pSharedWorkspace as ObjcId, in pAppName as ObjcId) returns CBool binds to "objc:NSWorkspace.launchApplication:"
+  private foreign handler ObjC_NSURLAlloc() returns ObjcRetainedId binds to "objc:NSURL.+alloc"
+  private foreign handler ObjC_NSURLInitFileURLWithPath(in pObj as ObjcId, in pFilename as ObjcId) returns ObjcId binds to "objc:NSURL.-initFileURLWithPath:"
+  private foreign handler ObjC_NSURLInitFileURLWithPathWithOptions(in pFilename as ObjcId, pIsDirectory as CBool) returns ObjcId binds to "objc:NSURL.-initFfileURLWithPath:isDirectory:"
+  private foreign handler ObjC_NSURLBookMarkDataWithOptions(in pNSURL as ObjcId, in pOptions as CULong, in pValuesForKeys as optional ObjcId, in pRelativeUrl as optional ObjcId, out pError as ObjcId) returns ObjcId binds to "objc:NSURL.-bookmarkDataWithOptions:includingResourceValuesForKeys:relativeToURL:error:"
 
   /**
   Summary:
 
   Parameters:
   pFilename:
+  pOptions: "minimal", "bookmark file", "security scope", "read only access"
 
   Returns:
   */
-  public handler NSURLGetBookmarkFromURL(in pFilename as String)
+  public handler NSURLGetBookmarkDataWithOptions(in pFilename as String, in pOptions as String) returns optional Data
+    variable tOptions as List
+    variable tOption as String
+    variable tBookmarkOptions as Integer
+
+    variable tNSURL as optional ObjcObject
+    variable tNSData as optional ObjcObject
+    variable tNSError as optional ObjcObject
+
+    split pOptions by "," into tOptions
+
+    repeat for each element tOption in tOptions
+      put tBookmarkOptions bitwise or _bookmarkOptionTypes(tOption) into tBookmarkOptions
+    end repeat
+
+    unsafe
+      put ObjC_NSURLAlloc() into tNSURL
+      put ObjC_NSDataAlloc() into tNSData
+      put ObjC_NSURLInitFileURLWithPath(tNSURL, StringToNSString(pFilename)) into tNSURL
+      if tNSURL is not nothing then
+        put ObjC_NSURLBookMarkDataWithOptions(tNSURL, tBookmarkOptions, nothing, nothing, tNSError) into tNSData
+      end if
+    end unsafe
+
+    if tNSError is not nothing then
+      log NSErrorLocalizedFailureReason(tNSError)
+    else
+      return DataFromNSData(tNSData)
+    end if
     /*
       NSURL *theURL = [[NSURL alloc] initFileURLWithPath:pFilename];
       NSError *error = nil;
@@ -38,15 +70,6 @@ library com.livecode.extensions.devore.nsurl
 
       return bookmarkData;
     */
-    variable sharedWorkspace as ObjcObject
-    variable wasSuccessful as Boolean
-
-    unsafe
-      put NSWorkspaceSharedWorkspace() into sharedWorkspace
-      put NSWorkspaceSelectFile(sharedWorkspace, StringToNSString(pFilename), StringToNSString("")) into wasSuccessful
-    end unsafe
-
-    return wasSuccessful
   end handler
 
 
@@ -104,5 +127,24 @@ library com.livecode.extensions.devore.nsurl
 
     [theURL release];
     */
+  end handler
+
+
+  /**
+  Summary: Returns the bitshifted value for constants.
+
+  Description:
+  https://developer.apple.com/documentation/foundation/nsurlbookmarkcreationoptions?language=objc
+  */
+  private handler _bookmarkOptionTypes(in pType as String) returns CULong
+    if pType is "minimal" then
+      return 1 shifted left by 9 bitwise
+    else if pType is "bookmark file" then
+      return 1 shifted left by 10 bitwise
+    else if pType is "security scope" then
+      return 1 shifted left by 11 bitwise
+    else if pType is "read only access" then
+      return 1 shifted left by 12 bitwise
+    end if
   end handler
 end library
