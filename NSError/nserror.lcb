@@ -1,0 +1,48 @@
+module community.livecode.trevordevore.nserror
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "NSError"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.1.0"
+
+  private foreign handler ObjC_NSErrorLocalizedFailureReason(in pObj as ObjcId) returns ObjcId binds to "objc:NSError.-localizedFailureReason"
+  private foreign handler ObjC_NSErrorLocalizedDescription(in pObj as ObjcId) returns ObjcId binds to "objc:NSError.-localizedDescription"
+  private foreign handler ObjC_NSErrorLocalizedRecoverySuggestion(in pObj as ObjcId) returns ObjcId binds to "objc:NSError.-localizedRecoverySuggestion"
+
+  public handler NSErrorLocalizedFailureReason(in pErrorObj as ObjcObject) returns String
+    variable tErrorString as optional ObjcObject
+
+    unsafe
+      put ObjC_NSErrorLocalizedFailureReason(pErrorObj) into tErrorString
+    end unsafe
+
+    return StringFromNSString(tErrorString)
+  end handler
+
+
+  public handler NSErrorLocalizedDescription(in pErrorObj as ObjcObject) returns String
+    variable tErrorString as optional ObjcObject
+
+    unsafe
+      put ObjC_NSErrorLocalizedDescription(pErrorObj) into tErrorString
+    end unsafe
+
+    return StringFromNSString(tErrorString)
+  end handler
+
+
+  public handler NSErrorLocalizedRecoverySuggestion(in pErrorObj as ObjcObject) returns String
+    variable tErrorString as optional ObjcObject
+
+    unsafe
+      put ObjC_NSErrorLocalizedRecoverySuggestion(pErrorObj) into tErrorString
+    end unsafe
+
+    if tErrorString is not nothing then
+      return StringFromNSString(tErrorString)
+    else
+      return ""
+    end if
+  end handler
+end module

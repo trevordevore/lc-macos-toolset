@@ -1,0 +1,10 @@
+module community.livecode.trevordevore.nsdata
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "NSData"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.1.0"
+
+  public foreign handler ObjC_NSDataAlloc() returns ObjcRetainedId binds to "objc:NSData.+alloc"
+end module
