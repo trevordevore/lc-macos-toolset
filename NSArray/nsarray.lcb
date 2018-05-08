@@ -1,0 +1,22 @@
+module community.livecode.trevordevore.nsarray
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "NSArray"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.1.0"
+
+  public foreign handler ObjC_NSArrayAlloc() returns ObjcRetainedId binds to "objc:NSArray.+alloc"
+  public foreign handler ObjC_NSArrayComponentsJoinedByString(in pObj as ObjcId, in pSeperator as ObjcId) returns ObjcId binds to "objc:NSArray.-componentsJoinedByString:"
+
+  public handler NSArrayToString(in pNSArray as ObjcObject, in pSeperator as String) returns String
+    variable tNSArray as ObjcObject
+    variable tNSString as ObjcObject
+
+    unsafe
+      put ObjC_NSArrayComponentsJoinedByString(pNSArray, StringToNSString(pSeperator)) into tNSString
+    end unsafe
+
+    return StringFromNSString(tNSString)
+  end handler
+end module
