@@ -7,131 +7,557 @@ library com.livecode.extensions.devore.nswindow
   metadata author is "Trevor DeVore"
   metadata version is "0.1.0"
 
-  private foreign handler NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
-  private foreign handler NSWorkspaceSelectFile(in pSharedWorkspace as ObjcId, in pFilename as ObjcId, in pRootedAtPath as ObjcId) returns CBool binds to "objc:NSWorkspace.-selectFile:inFileViewerRootedAtPath:"
-  private foreign handler NSWorkspaceLaunchApplication(in pSharedWorkspace as ObjcId, in pAppName as ObjcId) returns CBool binds to "objc:NSWorkspace.launchApplication:"
+  private foreign handler ObjC_NSApplicationSharedApplication() returns ObjcId binds to "objc:NSApplication.+sharedApplication"
+  private foreign handler ObjC_NSAppWindowWithWindowNumber(in pObj as ObjcId, in pWindowNumber as CLong) returns ObjcId binds to "objc:NSApplication.-windowWithWindowNumber:"
+  private foreign handler ObjC_NSWindowStyleMask(in pObj as ObjcId) returns CLong binds to "objc:NSWindow.-styleMask"
+  private foreign handler ObjC_NSWindowToggleFullScreen(in pObj as ObjcId, pSender as optional ObjcId) returns nothing binds to "objc:NSWindow.-toggleFullScreen:"
+  private foreign handler ObjC_NSWindowSetCollectionBehavior(in pObj as ObjcId, in pOptions as CInt) returns nothing binds to "objc:NSWindow.-setCollectionBehavior:"
+  private foreign handler ObjC_NSWindowGetCollectionBehavior(in pObj as ObjcId) returns CInt binds to "objc:NSWindow.-collectionBehavior"
+  private foreign handler ObjC_NSWindowSetIgnoresMouseEvents(in pObj as ObjcId, in pBool as CBool) returns nothing binds to "objc:NSWindow.-setIgnoresMouseEvents:"
+  private foreign handler ObjC_NSWindowGetIgnoresMouseEvents(in pObj as ObjcId) returns CBool binds to "objc:NSWindow.-ignoresMouseEvents"
+  private foreign handler ObjC_NSWindowSetLevel(in pObj as ObjcId, in pLevel as CInt) returns nothing binds to "objc:NSWindow.-setLevel:"
+  private foreign handler ObjC_NSWindowGetLevel(in pObj as ObjcId) returns CInt binds to "objc:NSWindow.-level"
+  private foreign handler ObjC_NSWindowMakeKeyAndOrderFront(in pObj as ObjcId, in Sender as optional ObjcId) returns nothing binds to "objc:NSWindow.-makeKeyAndOrderFront:"
+  private foreign handler ObjC_NSWindowOrderFront(in pObj as ObjcId, in Sender as optional ObjcId) returns nothing binds to "objc:NSWindow.-orderFront:"
 
+  private handler _GetNSWindow(in pWindowId as Integer) returns optional ObjcId
+    variable tNSApp as ObjcObject
+    variable tWindow as optional ObjcObject
 
-  /**
-  Summary:
+    unsafe
+      put ObjC_NSApplicationSharedApplication() into tNSApp
+      put ObjC_NSAppWindowWithWindowNumber(tNSApp, pWindowId) into tWindow
+    end unsafe
 
-  Returns: Boolean
-  */
-  public handler NSWindowIsFullScreen(in pWindowId as Integer)
-    /*
-      NSWindow *theWindow = nil;
-      theWindow = [NSApp windowWithWindowNumber: pWindowID];
-      if (theWindow != nil)
-      {
-          return (([theWindow styleMask] & NSFullScreenWindowMask) == NSFullScreenWindowMask);
-      } else {
-          return false;
-      }
-    */
+    return tWindow
   end handler
 
 
   /**
-  Summary:
+  Description:
+  https://developer.apple.com/documentation/appkit/nswindowstylemask?language=objc
+  */
+  private handler _GetStyles() returns Array
+    return {"borderless": 0, \
+            "titled": 1 shifted left by 0 bitwise, \
+            "closable": 1 shifted left by 1 bitwise, \
+            "miniaturizable": 1 shifted left by 2 bitwise, \
+            "resizable": 1 shifted left by 3 bitwise, \
+            "textured background": 1 shifted left by 8 bitwise, \
+            "unified title and toolbar": 1 shifted left by 12 bitwise, \
+            "full screen": 1 shifted left by 14 bitwise, \
+            "full size content view": 1 shifted left by 15 bitwise, \
+            "utility window": 1 shifted left by 4 bitwise, \
+            "doc modal window": 1 shifted left by 6 bitwise, \
+            "nonactivating modal": 1 shifted left by 7 bitwise, \
+            "HUD window": 1 shifted left by 13 bitwise \
+            }
+  end handler
+
+
+  /**
+  Description:
+  https://developer.apple.com/documentation/appkit/nswindowcollectionbehavior?language=objc
+  */
+  private handler _GetCollectionBehaviors() returns Array
+    return {"default": 0, \
+            "can join all spaces": 1 shifted left by 0 bitwise, \
+            "move to active space": 1 shifted left by 1 bitwise, \
+            "managed": 1 shifted left by 2 bitwise, \
+            "transient": 1 shifted left by 3 bitwise, \
+            "stationary": 1 shifted left by 4 bitwise, \
+            "participates in cycle": 1 shifted left by 5 bitwise, \
+            "ignores cycle": 1 shifted left by 6 bitwise, \
+            "full screen primary": 1 shifted left by 7 bitwise, \
+            "full screen auxiliary": 1 shifted left by 8 bitwise, \
+            "full screen allows tiling": 1 shifted left by 11 bitwise, \
+            "full screen disallows tiling": 1 shifted left by 12 bitwise, \
+            "full screen none": 1 shifted left by 9 bitwise \
+            }
+  end handler
+
+
+  /**
+  Description:
+  https://developer.apple.com/documentation/appkit/nswindowlevel?language=objc
+
+  Integer values come from CoreGraphics -> CGWindowLevel.h
+  */
+  private handler _GetLevels() returns Array
+    return {"floating": 3, \
+            "main menu": 24, \
+            "panel": 8, \
+            "normal": 0, \
+            "pop-up menu": 101, \
+            "screen saver": 1000, \
+            "status": 25, \
+            "submenu": 3, \
+            "torn off": 3 \
+            }
+  end handler
+
+
+  /**
+  Summary: Returns the list of available styles for a window.
+
+  Description:
+  See the following url for a description of the options:
+  https://developer.apple.com/documentation/appkit/nswindowstylemask?language=objc
+
+  * HUD window
+  * borderless
+  * closable
+  * doc modal window
+  * full screen
+  * full size content view
+  * miniaturizable
+  * nonactivating modal
+  * resizable
+  * textured background
+  * titled
+  * unified title and toolbar
+  * utility window
+
+  Returns: Comma-delimited list of styles.
+  */
+  public handler NSWindowStyleMasks() returns String
+    variable tKeys as List
+    variable tOptions as String
+
+    put the keys of _GetStyles() into tKeys
+    sort tKeys in ascending text order
+    combine tKeys with "," into tOptions
+    return tOptions
+  end handler
+
+
+  /**
+  Summary: Returns the list of available collection behaviors for a window.
+
+  Description:
+  See the following url for a description of the options:
+  https://developer.apple.com/documentation/appkit/nswindowcollectionbehavior?language=objc
+
+  * default
+  * can join all spaces
+  * move to active space
+  * managed
+  * transient
+  * stationary
+  * participates in cycle
+  * ignores cycle
+  * full screen primary
+  * full screen auxiliary
+  * full screen allows tiling
+  * full screen disallows tiling
+  * full screen none
+
+  Returns: Comma-delimited list of collection behaviors.
+  */
+  public handler NSWindowCollectionBehaviors() returns String
+    variable tKeys as List
+    variable tOptions as String
+
+    put the keys of _GetLevels() into tKeys
+    sort tKeys in ascending text order
+    combine tKeys with "," into tOptions
+    return tOptions
+  end handler
+
+
+  /**
+  Summary: Returns the list of available levels for a window.
+
+  Description:
+  See the following url for a description of the options:
+  https://developer.apple.com/documentation/appkit/nswindowlevel?language=objc
+
+  * floating
+  * main menu
+  * panel
+  * normal
+  * pop-up menu
+  * screen saver
+  * torn off
+
+  Returns: Comma-delimited list of levels.
+  */
+  public handler NSWindowLevels() returns String
+    variable tKeys as List
+    variable tOptions as String
+
+    put the keys of _GetLevels() into tKeys
+    sort tKeys in ascending text order
+    combine tKeys with "," into tOptions
+    return tOptions
+  end handler
+
+
+
+  /**
+  Summary: Returns whether or not a window has the specified list of styles.
+
+  Parameters:
+  pWindowId: The `windowId` property of a stack.
+  pStyles: Comma-delimited list of styles.
+
+  Description:
+  See `NSWindowStyleMasks()` for a list the available styles.
 
   Returns: Boolean
+  */
+  public handler NSWindowHasStyleMasks(in pWindowId as Integer, in pStyleOptions as String) returns Boolean
+    variable tWindow as optional ObjcObject
+    variable tStyleMask as optional Integer
+    variable tStyleMasks as Array
+    variable tOptionsToCheck as List
+    variable tIsMatch as Boolean
+
+    split pStyleOptions by "," into tOptionsToCheck
+
+    put _GetNSWindow(pWindowId) into tWindow
+
+    unsafe
+      if tWindow is nothing then
+        log "window not found"
+      else
+        put ObjC_NSWindowStyleMask(tWindow) into tStyleMask
+      end if
+    end unsafe
+
+    if tStyleMask is not nothing then
+      variable tMask as String
+
+      put _GetStyles() into tStyleMasks
+
+      repeat for each element tMask in tOptionsToCheck
+        if tStyleMasks[tMask] is 0 then
+          put tStyleMask is 0 into tIsMatch
+          exit repeat
+        else
+          put tStyleMask bitwise and tStyleMasks[tMask] > 0 into tIsMatch
+          if not tIsMatch then
+            exit repeat
+          end if
+        end if
+      end repeat
+    end if
+
+    return tIsMatch
+  end handler
+
+
+  /**
+  Summary: Toggles a window back and forth between the full screen state.
+
+  Parameters:
+  pWindowId: The `windowId` property of a stack
+
+  Returns: nothing
   */
   public handler NSWindowToggleIsFullScreen(in pWindowId as Integer)
-    /*
-      NSWindow *theWindow = nil;
-      theWindow = [NSApp windowWithWindowNumber: pWindowID];
+    variable tWindow as optional ObjcObject
 
-      if (theWindow != nil)
-      {
-          [theWindow toggleFullScreen:nil];
-          return @"";
-      } else {
-          return @"could not obtain window";
-      }
-    */
+    unsafe
+      put _GetNSWindow(pWindowId) into tWindow
+
+      if tWindow is nothing then
+        log "window not found"
+      else
+        ObjC_NSWindowToggleFullScreen(tWindow, nothing)
+      end if
+    end unsafe
+  end handler
+
+
+ /**
+  Summary: Sets the collection behaviors for a window.
+
+  Parameters:
+  pWindowId: The `windowId` property of a stack.
+  pBehaviors: Comma-delimited list of collection behaviors.
+
+  Description:
+  See `NSWindowCollectionBehaviors()` for a list the available collection behaviors.
+
+  Returns: nothing
+  */
+  public handler NSWindowSetCollectionBehavior(in pWindowId as Integer, in pBehaviors as String)
+    variable tWindow as optional ObjcObject
+    variable tBehaviorsList as List
+    variable tBehavior as String
+    variable tBehaviors as Integer
+    variable tCollectionBehaviors as Array
+
+    split pBehaviors by "," into tBehaviorsList
+
+    put _GetNSWindow(pWindowId) into tWindow
+    put _GetCollectionBehaviors() into tCollectionBehaviors
+
+    repeat for each element tBehavior in tBehaviorsList
+      if tCollectionBehaviors[tBehavior] is 0 then
+        put 0 into tBehaviors
+        exit repeat
+      else
+        put tBehaviors bitwise or tCollectionBehaviors[tBehavior] into tBehaviors
+      end if
+    end repeat
+
+    unsafe
+      ObjC_NSWindowSetCollectionBehavior(tWindow, tBehaviors)
+    end unsafe
+  end handler
+
+
+ /**
+  Summary: Gets the collection behaviors for a window.
+
+  Parameters:
+  pWindowId: The `windowId` property of a stack.
+
+  Description:
+  See `NSWindowCollectionBehaviors()` for a list the available collection behaviors.
+
+  Returns: Comma-delimited list of collection behaviors
+  */
+  public handler NSWindowGetCollectionBehavior(in pWindowId as Integer) returns String
+    variable tWindow as optional ObjcObject
+    variable tCollectionBehaviors as Array
+    variable tBehaviors as Integer
+    variable tOptions as List
+    variable tOption as String
+    variable tOptionsStr as String
+
+    put _GetNSWindow(pWindowId) into tWindow
+    put _GetCollectionBehaviors() into tCollectionBehaviors
+
+    if tWindow is nothing then
+      log "window not found"
+    else
+      unsafe
+        put ObjC_NSWindowGetCollectionBehavior(tWindow) into tBehaviors
+      end unsafe
+
+      if tBehaviors is 0 then
+        push "default" onto tOptions
+      else
+        repeat for each key tOption in tCollectionBehaviors
+          if tBehaviors bitwise and tCollectionBehaviors[tOption] > 0 then
+            push tOption onto tOptions
+          end if
+        end repeat
+      end if
+
+      sort tOptions in ascending text order
+
+      combine tOptions with "," into tOptionsStr
+    end if
+
+    return tOptionsStr
   end handler
 
 
   /**
-  Summary:
+  Summary: Set to true to tell the window to ignore mouse events.
 
-  Returns: Boolean
+  Parameters:
+  pWindowId: The `windowId` property of a stack.
+  pIgnoreEvents: true or false.
+
+  Description:
+  When set to true this property will ignore all mouse events.
+
+  Returns: nothing
   */
-  public handler NSWindowSetHasFullScreenControl(in pWindowId as Integer)
-    /*
-      NSWindow *theWindow = nil;
-      theWindow = [NSApp windowWithWindowNumber: pWindowID];
+  public handler NSWindowSetIgnoresMouseEvents(in pWindowId as Integer, in pIgnoreEvents as Boolean)
+    variable tWindow as optional ObjcObject
 
-      if (theWindow != nil)
-      {
-          [theWindow setCollectionBehavior: [theWindow collectionBehavior] | NSWindowCollectionBehaviorFullScreenPrimary];
-          return @"";
-      } else {
-          return @"could not obtain window";
-      }
-    */
+    put _GetNSWindow(pWindowId) into tWindow
+
+    unsafe
+      if tWindow is nothing then
+        log "window not found"
+      else
+        ObjC_NSWindowSetIgnoresMouseEvents(tWindow, pIgnoreEvents)
+      end if
+    end unsafe
   end handler
 
 
   /**
-  Summary:
+  Summary: Returns the ignore mouse events setting for the window.
+
+  Parameters:
+  pWindowId: The `windowId` property of a stack.
 
   Returns: Boolean
   */
-  public handler NSWindowSetCollectionBehavior(in pWindowId as Integer)
-    /*
-      NSWindow *theWindow = nil;
-      theWindow = [NSApp windowWithWindowNumber: pWindowID];
+  public handler NSWindowGetIgnoresMouseEvents(in pWindowId as Integer) returns Boolean
+    variable tWindow as optional ObjcObject
+    variable tBoolean as Boolean
 
-      if (theWindow != nil)
-      {
-          [theWindow setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
-          return @"";
-      } else {
-          return @"could not obtain window";
-      }
-    */
+    put _GetNSWindow(pWindowId) into tWindow
+
+    if tWindow is nothing then
+      log "window not found"
+    else
+      unsafe
+        put ObjC_NSWindowGetIgnoresMouseEvents(tWindow) into tBoolean
+      end unsafe
+    end if
+
+    return tBoolean
+  end handler
+
+
+
+  /**
+  Summary: Moves the window to the front of the screen list, within its level, and shows it.
+
+  Parameters:
+  pWindowId: The `windowId` property of a stack.
+
+  Returns: nothing
+  */
+  public handler NSWindowMakeKeyAndOrderFront(in pWindowId as Integer)
+    variable tWindow as optional ObjcObject
+
+    put _GetNSWindow(pWindowId) into tWindow
+
+    unsafe
+      if tWindow is nothing then
+        log "window not found"
+      else
+        ObjC_NSWindowMakeKeyAndOrderFront(tWindow, nothing)
+      end if
+    end unsafe
   end handler
 
 
   /**
-  Summary:
+  Summary: Moves the window to the front of the screen list, within its level.
 
-  Returns: Boolean
+  Parameters:
+  pWindowId: The `windowId` property of a stack.
+
+  Returns: nothing
   */
-  public handler NSWindowAddToCollectionBehavior(in pWindowId as Integer)
+  public handler NSWindowOrderFront(in pWindowId as Integer)
+    variable tWindow as optional ObjcObject
 
+    put _GetNSWindow(pWindowId) into tWindow
+
+    unsafe
+      if tWindow is nothing then
+        log "window not found"
+      else
+        ObjC_NSWindowOrderFront(tWindow, nothing)
+      end if
+    end unsafe
   end handler
 
 
   /**
-  Summary:
+  Summary: Sets the level of a window.
 
-  Returns: Boolean
+  Parameters:
+  pWindowId: The `windowId` property of a stack.
+  pLevel: The level description (e.g. "screen saver").
+
+  Description:
+  See `NSWindowLevels()` for list of levels.
+
+  Returns: nothing
   */
-  public handler NSWindowRemoveFromCollectionBehavior(in pWindowId as Integer)
+  public handler NSWindowSetLevel(in pWindowId as Integer, in pLevel as String)
+    variable tWindow as optional ObjcObject
+    variable tLevel as Integer
+    variable tError as String
 
+    put _GetNSWindow(pWindowId) into tWindow
+
+    if tWindow is nothing then
+      log "window not found"
+    else
+      put _GetWindowLevelFromString(pLevel, tLevel) into tError
+      if tError is not empty then
+        log tError
+      else
+        unsafe
+          ObjC_NSWindowSetLevel(tWindow, tLevel)
+        end unsafe
+      end if
+    end if
   end handler
 
 
   /**
-  Summary:
+  Summary: Returns the level of a window.
 
-  Returns: Boolean
+  Parameters:
+  pWindowId: The `windowId` property of a stack.
+
+  Description:
+  See `NSWindowLevels()` for list of levels.
+
+  Returns: String representing the window level (e.g. "screen saver").
   */
-  public handler NSWindowSetIgnoreMouseEvents(in pWindowId as Integer)
-    /*
-      NSWindow *theWindow = nil;
-      theWindow = [NSApp windowWithWindowNumber: pWindowID];
+  public handler NSWindowGetLevel(in pWindowId as Integer) returns String
+    variable tWindow as optional ObjcObject
+    variable tLevel as Integer
 
-      if (theWindow != nil)
-      {
-          [theWindow setIgnoresMouseEvents:pIgnore];
-          return @"";
-      } else {
-          return @"could not obtain window";
-      }
-    */
+    put _GetNSWindow(pWindowId) into tWindow
+
+    if tWindow is nothing then
+      log "window not found"
+    else
+      unsafe
+        put ObjC_NSWindowGetLevel(tWindow) into tLevel
+      end unsafe
+
+      return _GetWindowLevelStringFromInteger(tLevel)
+    end if
+
+    return ""
+  end handler
+
+
+  /**
+  Summary: Returns the integer window level represented by a string.
+  */
+  private handler _GetWindowLevelFromString(in pLevel as String, out pOutLevel as Integer) returns String
+    variable tLevels as Array
+    variable tKey as String
+
+    put _GetLevels() into tLevels
+
+    repeat for each key tKey in tLevels
+      if tKey is pLevel then
+        put tLevels[tKey] into pOutLevel
+        return ""
+      end if
+    end repeat
+
+    return "window level not found:" && pLevel
+  end handler
+
+
+  /**
+  Summary: Returns the string that represents an integer window level.
+  */
+  private handler _GetWindowLevelStringFromInteger(in pLevel as Integer) returns String
+    variable tLevels as Array
+    variable tKey as String
+
+    put _GetLevels() into tLevels
+
+    repeat for each key tKey in tLevels
+      if tLevels[tKey] is pLevel then
+        return tKey
+      end if
+    end repeat
+
+    return ""
   end handler
 
 
@@ -205,35 +631,6 @@ library com.livecode.extensions.devore.nswindow
         [t_window_list release];
 
         return t_return;
-    */
-  end handler
-
-
-  /**
-  Summary:
-
-  Parameters:
-  pFilename:
-
-  Description:
-
-
-  Returns:
-  */
-  public handler NSWindowMakeWindowTopmost()
-    /*
-      NSWindow * t_nswindow = nil;
-
-      t_nswindow = [NSApp windowWithWindowNumber:pWindowID];
-      if (t_nswindow == nil)
-      {
-          return @"unable to obtain window";
-      }
-
-      [t_nswindow setLevel:NSScreenSaverWindowLevel]; //kCGMaximumWindowLevelKey] CGShieldingWindowLevel()
-      [t_nswindow makeKeyAndOrderFront:nil];
-
-      return @"";
     */
   end handler
 
