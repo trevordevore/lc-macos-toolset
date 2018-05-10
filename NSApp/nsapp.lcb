@@ -7,18 +7,18 @@ library community.livecode.trevordevore.nsapp
   metadata author is "Trevor DeVore"
   metadata version is "0.1.0"
 
-  private foreign handler _NSApplicationSharedApplication() returns ObjcId binds to "objc:NSApplication.+sharedApplication"
+  private foreign handler ObjC_NSApplicationSharedApplication() returns ObjcId binds to "objc:NSApplication.+sharedApplication"
 
-  private foreign handler _NSApplicationIsActive(in pSharedApp as ObjcId) returns CBool binds to "objc:NSApplication.isActive"
+  private foreign handler ObjC_NSApplicationIsActive(in pSharedApp as ObjcId) returns CBool binds to "objc:NSApplication.isActive"
 
-  private foreign handler _NSAppActivateIgnoringOtherApps(in pSharedApp as ObjcId, in pBoolean as CBool) returns nothing binds to "objc:NSApplication.-activateIgnoringOtherApps:"
+  private foreign handler ObjC_NSAppActivateIgnoringOtherApps(in pSharedApp as ObjcId, in pBoolean as CBool) returns nothing binds to "objc:NSApplication.-activateIgnoringOtherApps:"
 
-  private foreign handler _NSAppSetPresentationOptions(in pSharedApp as ObjcId, in pOptions as CInt) returns nothing binds to "objc:NSApplication.-setPresentationOptions:"
-  private foreign handler _NSAppGetPresentationOptions(in pSharedApp as ObjcId) returns CInt binds to "objc:NSApplication.-presentationOptions"
-  private foreign handler _NSAppGetCurrentSystemPresentationOptions(in pSharedApp as ObjcId) returns CInt binds to "objc:NSApplication.-currentSystemPresentationOptions"
+  private foreign handler ObjC_NSAppSetPresentationOptions(in pSharedApp as ObjcId, in pOptions as CInt) returns nothing binds to "objc:NSApplication.-setPresentationOptions:"
+  private foreign handler ObjC_NSAppGetPresentationOptions(in pSharedApp as ObjcId) returns CInt binds to "objc:NSApplication.-presentationOptions"
+  private foreign handler ObjC_NSAppGetCurrentSystemPresentationOptions(in pSharedApp as ObjcId) returns CInt binds to "objc:NSApplication.-currentSystemPresentationOptions"
 
-  private foreign handler _NSAppRequestUserAttention(in pSharedApp as ObjcId, in pRequestType as CInt) returns CInt binds to "objc:NSApplication.-requestUserAttention:"
-  private foreign handler _NSAppCancelUserAttentionRequest(in pSharedApp as ObjcId, in pRequestIdentifier as CInt) returns nothing binds to "objc:NSApplication.-cancelUserAttentionRequest:"
+  private foreign handler ObjC_NSAppRequestUserAttention(in pSharedApp as ObjcId, in pRequestType as CInt) returns CInt binds to "objc:NSApplication.-requestUserAttention:"
+  private foreign handler ObjC_NSAppCancelUserAttentionRequest(in pSharedApp as ObjcId, in pRequestIdentifier as CInt) returns nothing binds to "objc:NSApplication.-cancelUserAttentionRequest:"
 
   private constant kPresentationTypes is ["auto-hide dock", "hide dock", "auto-hide menubar", "hide menubar", "disable apple menu", "disable process switching", "disable force quit", "disable session termination", "disable hide application", "disable menubar transparency", "fullscreen", "auto-hide toolbar"]
 
@@ -41,8 +41,8 @@ library community.livecode.trevordevore.nsapp
     variable isActive as Boolean
 
     unsafe
-      put _NSApplicationSharedApplication() into nsApp
-      put _NSApplicationIsActive(nsApp) into isActive
+      put ObjC_NSApplicationSharedApplication() into nsApp
+      put ObjC_NSApplicationIsActive(nsApp) into isActive
     end unsafe
 
     return isActive
@@ -64,8 +64,8 @@ library community.livecode.trevordevore.nsapp
     variable nsApp as ObjcObject
 
     unsafe
-      put _NSApplicationSharedApplication() into nsApp
-      _NSAppActivateIgnoringOtherApps(nsApp, pBoolean)
+      put ObjC_NSApplicationSharedApplication() into nsApp
+      ObjC_NSAppActivateIgnoringOtherApps(nsApp, pBoolean)
     end unsafe
   end handler
 
@@ -87,8 +87,8 @@ library community.livecode.trevordevore.nsapp
     end if
 
     unsafe
-      put _NSApplicationSharedApplication() into nsApp
-      put _NSAppRequestUserAttention(nsApp, requestType) into tIdentifier
+      put ObjC_NSApplicationSharedApplication() into nsApp
+      put ObjC_NSAppRequestUserAttention(nsApp, requestType) into tIdentifier
     end unsafe
 
     return tIdentifier
@@ -102,8 +102,8 @@ library community.livecode.trevordevore.nsapp
     variable nsApp as ObjcObject
 
     unsafe
-      put _NSApplicationSharedApplication() into nsApp
-      _NSAppCancelUserAttentionRequest(nsApp, pRequestIdentifier)
+      put ObjC_NSApplicationSharedApplication() into nsApp
+      ObjC_NSAppCancelUserAttentionRequest(nsApp, pRequestIdentifier)
     end unsafe
   end handler
 
@@ -140,8 +140,8 @@ library community.livecode.trevordevore.nsapp
     end repeat
 
     unsafe
-      put _NSApplicationSharedApplication() into nsApp
-      _NSAppSetPresentationOptions(nsApp, tPresentationOptions)
+      put ObjC_NSApplicationSharedApplication() into nsApp
+      ObjC_NSAppSetPresentationOptions(nsApp, tPresentationOptions)
     end unsafe
   end handler
 
@@ -159,8 +159,8 @@ library community.livecode.trevordevore.nsapp
     variable tOptionsStr as String
 
     unsafe
-      put _NSApplicationSharedApplication() into nsApp
-      put _NSAppGetPresentationOptions(nsApp) into tPresentationOptions
+      put ObjC_NSApplicationSharedApplication() into nsApp
+      put ObjC_NSAppGetPresentationOptions(nsApp) into tPresentationOptions
     end unsafe
 
     if (tPresentationOptions is 0) then
@@ -189,8 +189,8 @@ library community.livecode.trevordevore.nsapp
     variable tPresentationOptions as Integer
 
     unsafe
-      put _NSApplicationSharedApplication() into nsApp
-      put _NSAppGetCurrentSystemPresentationOptions(nsApp) into tPresentationOptions
+      put ObjC_NSApplicationSharedApplication() into nsApp
+      put ObjC_NSAppGetCurrentSystemPresentationOptions(nsApp) into tPresentationOptions
     end unsafe
 
     return _presentationOptionsToString(tPresentationOptions)
