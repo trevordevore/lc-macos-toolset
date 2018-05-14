@@ -19,6 +19,8 @@ library com.livecode.extensions.devore.nswindow
   private foreign handler ObjC_NSWindowGetLevel(in pObj as ObjcId) returns CInt binds to "objc:NSWindow.-level"
   private foreign handler ObjC_NSWindowMakeKeyAndOrderFront(in pObj as ObjcId, in Sender as optional ObjcId) returns nothing binds to "objc:NSWindow.-makeKeyAndOrderFront:"
   private foreign handler ObjC_NSWindowOrderFront(in pObj as ObjcId, in Sender as optional ObjcId) returns nothing binds to "objc:NSWindow.-orderFront:"
+  private foreign handler ObjC_NSWindowGetRepresentedFilename(in pObj as ObjcId) returns ObjcId binds to "objc:NSWindow.-representedFilename"
+  private foreign handler ObjC_NSWindowSetRepresentedFilename(in pObj as ObjcId, in pFilename as ObjcId) returns nothing binds to "objc:NSWindow.-setRepresentedFilename:"
 
   private handler _GetNSWindow(in pWindowId as Integer) returns optional ObjcId
     variable tNSApp as ObjcObject
@@ -453,6 +455,35 @@ library com.livecode.extensions.devore.nswindow
       else
         ObjC_NSWindowOrderFront(tWindow, nothing)
       end if
+    end unsafe
+  end handler
+
+
+  public handler NSWindowGetRepresentedFilename(in pWindowId as Integer) returns String
+    variable tWindow as optional ObjcObject
+    variable tFilename as optional ObjcObject
+
+    put _GetNSWindow(pWindowId) into tWindow
+
+    unsafe
+      put ObjC_NSWindowGetRepresentedFilename(tWindow) into tFilename
+    end unsafe
+
+    if tFilename is not nothing then
+      return StringFromNSString(tFilename)
+    else
+      return ""
+    end if
+  end handler
+
+
+  public handler NSWindowSetRepresentedFilename(in pWindowId as Integer, in pFilename as String)
+    variable tWindow as optional ObjcObject
+
+    put _GetNSWindow(pWindowId) into tWindow
+
+    unsafe
+      ObjC_NSWindowSetRepresentedFilename(tWindow, StringToNSString(pFilename))
     end unsafe
   end handler
 
