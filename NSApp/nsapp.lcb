@@ -32,6 +32,8 @@ library community.livecode.trevordevore.nsapp
     variable tString as String
 
     combine kPresentationTypes with "," into tString
+    put "default," before tString
+
     return tString
   end handler
 
@@ -115,7 +117,7 @@ library community.livecode.trevordevore.nsapp
   pOptions: Comma-delimited list of options to set.
 
   Description:
-  pOptions can be one or more of the following: `auto-hide dock`, `hide dock`, `auto-hide menubar`, `hide menubar`, `disable apple menu`, `disable process switching`, `disable force quit`, `disable session termination`, `disable hide application`, `disable menubar transparency`, `fullscreen`, `auto-hide toolbar`.
+  pOptions can be one or more of the following: `default`, `auto-hide dock`, `hide dock`, `auto-hide menubar`, `hide menubar`, `disable apple menu`, `disable process switching`, `disable force quit`, `disable session termination`, `disable hide application`, `disable menubar transparency`, `fullscreen`, `auto-hide toolbar`.
 
   Note that some options require that other options be set as well. Refer to the Apple documentation for more information:
   https://developer.apple.com/documentation/appkit/nsapplicationpresentationoptions?language=objc
