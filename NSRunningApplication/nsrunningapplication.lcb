@@ -7,9 +7,45 @@ library com.livecode.extensions.devore.nsrunningapplication
   metadata author is "Trevor DeVore"
   metadata version is "0.1.0"
 
-  private foreign handler NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
-  private foreign handler NSWorkspaceSelectFile(in pSharedWorkspace as ObjcId, in pFilename as ObjcId, in pRootedAtPath as ObjcId) returns CBool binds to "objc:NSWorkspace.-selectFile:inFileViewerRootedAtPath:"
-  private foreign handler NSWorkspaceLaunchApplication(in pSharedWorkspace as ObjcId, in pAppName as ObjcId) returns CBool binds to "objc:NSWorkspace.launchApplication:"
+  private foreign handler ObjC_NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
+
+  private foreign handler ObjC_NSRunningApplicationAlloc() returns ObjcRetainedId binds to "objc:NSRunningApplication.+alloc"
+  private foreign handler ObjC_NSRunningApplicationRunningApplicationWithProcessIdentifier(in pObj as ObjcId, in pId as CInt) returns ObjcId binds to "objc:NSRunningApplication.+runningApplicationWithProcessIdentifier:"
+  private foreign handler ObjC_NSRunningApplicationRunningApplicationsWithBundleIdentifier(in pObj as ObjcId, in pBundleId as ObjcId) returns ObjcId binds to "objc:NSRunningApplication.+runningApplicationsWithBundleIdentifier:"
+  private foreign handler ObjC_NSRunningApplicationActivateWithOptions(in pObj as ObjcId, in pOptions as CInt) returns Boolean binds to "objc:NSRunningApplication.activateWithOptions:"
+
+
+  /**
+  Description:
+  https://developer.apple.com/documentation/appkit/nsapplicationactivationoptions?language=objc
+  */
+  private handler _GetActivationOptions() returns Array
+    return {"all windows": 1 shifted left by 0 bitwise, \
+            "ignoring other apps": 1 shifted left by 1 bitwise \
+            }
+  end handler
+
+  /**
+  Summary: Returns the list of available activation options.
+
+  Description:
+  See the following url for a description of the options:
+  https://developer.apple.com/documentation/appkit/nsapplicationactivationoptions?language=objc
+
+  * all windows
+  * ignoring other apps
+
+  Returns: Comma-delimited list of options.
+  */
+  public handler NSRunningApplicationActivationOptions() returns String
+    variable tKeys as List
+    variable tOptions as String
+
+    put the keys of _GetActivationOptions() into tKeys
+    sort tKeys in ascending text order
+    combine tKeys with "," into tOptions
+    return tOptions
+  end handler
 
 
   /**
@@ -23,29 +59,38 @@ library com.livecode.extensions.devore.nsrunningapplication
 
   Returns:
   */
-  public handler NSRunningApplicationActivateWithOptions()
-    /*
-      NSString *t_error = nil;
-      pid_t t_psn = (pid_t) pPSN;
+  public handler NSRunningApplicationActivateWithOptions(in pPid as Integer, in pOptions as String) returns Boolean
+    variable runningApp as optional ObjcObject
+    variable tOptionsLookup as Array
+    variable tActivationOptions as List
+    variable tOption as String
+    variable tOptions as Integer
+    variable wasActivated as Boolean
 
-      if (t_error == nil) {
-        NSRunningApplication * t_app = nil;
-            t_app = [NSRunningApplication runningApplicationWithProcessIdentifier:t_psn];
-            if (t_app != nil)
-                t_psn = [t_app activateWithOptions:NSApplicationActivateIgnoringOtherApps];
-            else
-                t_error = @"unable to set current process";
-      }
+    put _GetActivationOptions() into tOptionsLookup
+    split pOptions by "," into tActivationOptions
 
-      if (t_error == nil)
-      {
-        return @"";
-      }
-      else
-      {
-        // Return error message as string to Revolution
-        return t_error;
-      }
-    */
+    repeat for each element tOption in tActivationOptions
+      if tOption is not among the keys of tOptionsLookup then
+        throw "invalid activation option:" && tOption
+      end if
+
+      put tOptions bitwise or tOptionsLookup[tOption] into tOptions
+    end repeat
+
+    unsafe
+      put ObjC_NSRunningApplicationAlloc() into runningApp
+      put ObjC_NSRunningApplicationRunningApplicationWithProcessIdentifier(runningApp, pPid) into runningApp
+      log runningApp
+      if runningApp is not nothing then
+        put ObjC_NSRunningApplicationActivateWithOptions(runningApp, tOptions) into wasActivated
+      end if
+    end unsafe
+
+    if not wasActivated then
+      log "unable to activate process"
+    end if
+
+    return wasActivated
   end handler
 end library
