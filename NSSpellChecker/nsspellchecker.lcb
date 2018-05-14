@@ -1,0 +1,10 @@
+library community.livecode.trevordevore.nsspellchecker
+
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "NSSpellChecker"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.1.0"
+
+end library
