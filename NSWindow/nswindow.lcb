@@ -459,6 +459,14 @@ library com.livecode.extensions.devore.nswindow
   end handler
 
 
+  /**
+  Summary: Returns the filename associated with a window.
+
+  Parameters:
+  pWindowId: The `windowId` property of a stack.
+
+  Returns: String
+  */
   public handler NSWindowGetRepresentedFilename(in pWindowId as Integer) returns String
     variable tWindow as optional ObjcObject
     variable tFilename as optional ObjcObject
@@ -477,6 +485,20 @@ library com.livecode.extensions.devore.nswindow
   end handler
 
 
+  /**
+  Summary: Sets the filename associated with a window.
+
+  Parameters:
+  pWindowId: The `windowId` property of a stack.
+  pFilename:
+
+  Description:
+  Setting the filename of a window will display the icon of that filename in the title
+  bar. Command + clicking on the title bar title will display the path to the file in a
+  menu.
+
+  Returns: nothing
+  */
   public handler NSWindowSetRepresentedFilename(in pWindowId as Integer, in pFilename as String)
     variable tWindow as optional ObjcObject
 
