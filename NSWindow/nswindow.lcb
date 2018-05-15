@@ -22,13 +22,17 @@ library com.livecode.extensions.devore.nswindow
   private foreign handler ObjC_NSWindowGetRepresentedFilename(in pObj as ObjcId) returns ObjcId binds to "objc:NSWindow.-representedFilename"
   private foreign handler ObjC_NSWindowSetRepresentedFilename(in pObj as ObjcId, in pFilename as ObjcId) returns nothing binds to "objc:NSWindow.-setRepresentedFilename:"
 
+  private foreign handler CGWindowListCopyWindowInfo(in pListOptions as Integer, in pRelativeToWindow as CUint) returns ObjcRetainedId binds to "c:CoreGraphics.framework>CGWindowListCopyWindowInfo"
+
+  private constant kCGNullWindowId is 0
+
   private handler _GetNSWindow(in pWindowId as Integer) returns optional ObjcId
     variable tNSApp as ObjcObject
     variable tWindow as optional ObjcObject
 
     unsafe
       put ObjC_NSApplicationSharedApplication() into tNSApp
-      put ObjC_NSAppWindowWithWindowNumber(tNSApp, pWindowId) into tWindow
+      put ObjC_NSAppWindowWithWindowNumber(tNSApp, kCGNullWindowId) into tWindow
     end unsafe
 
     return tWindow
@@ -95,6 +99,20 @@ library com.livecode.extensions.devore.nswindow
             "status": 25, \
             "submenu": 3, \
             "torn off": 3 \
+            }
+  end handler
+
+  /**
+  Description:
+  https://developer.apple.com/documentation/coregraphics/cgwindowlistoption?language=objc
+  */
+  private handler _GetCGWindowListOptions() returns Array
+    return {"all": 0, \
+            "on screen only": 1 shifted left by 0 bitwise, \
+            "on screen above window": 1 shifted left by 1 bitwise, \
+            "on screen below window": 1 shifted left by 2 bitwise, \
+            "including window": 1 shifted left by 3 bitwise, \
+            "exclude desktop elements": 1 shifted left by 4 bitwise \
             }
   end handler
 
@@ -623,6 +641,33 @@ library com.livecode.extensions.devore.nswindow
   Returns: NSDictionary
   */
   public handler NSWindowGetRectsOfAllWindows()
+    variable tWindowListOptions as Array
+    variable tWindowListOption as Integer
+    variable tWindowArray as ObjcObject
+
+    put _GetCGWindowListOptions() into tWindowListOptions
+
+    put tWindowListOption bitwise or tWindowListOptions["on screen only"] into tWindowListOption
+    put tWindowListOption bitwise or tWindowListOptions["exclude desktop elements"] into tWindowListOption
+
+    unsafe
+      put CGWindowListCopyWindowInfo(tWindowListOption, kCGNullWindowId) into tWindowArray
+    end unsafe
+
+    variable tWindows as List
+    variable tWindow as Array
+
+    put ListFromNSArray(tWindowArray) into tWindows
+    repeat for each element tWindow in tWindows
+      /*
+      {kCGWindowAlpha: 1.000000, kCGWindowIsOnscreen: true, kCGWindowStoreType: 2, kCGWindowOwnerName: "Window Server",
+      kCGWindowNumber: 2, kCGWindowSharingState: 1, kCGWindowLayer: -2147483626, kCGWindowName: "Desktop", kCGWindowMemoryUsage: 5328,
+      kCGWindowBounds: {X: 0.000000, Height: 1440.000000, Y: 0.000000, Width: 2560.000000},
+      kCGWindowOwnerPID: 198}
+      */
+      log tWindow["kCGWindowAlpha"]
+    end repeat
+
     /*
       // http://developer.apple.com/library/mac/#documentation/Carbon/Reference/CGWindow_Reference/Reference/Functions.html%23//apple_ref/doc/uid/TP40008073-CH2-SW1
       CGWindowListOption listOptions = kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements;
