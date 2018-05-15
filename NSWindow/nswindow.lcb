@@ -10,7 +10,7 @@ library com.livecode.extensions.devore.nswindow
   private foreign handler ObjC_NSApplicationSharedApplication() returns ObjcId binds to "objc:NSApplication.+sharedApplication"
   private foreign handler ObjC_NSAppWindowWithWindowNumber(in pObj as ObjcId, in pWindowNumber as CLong) returns ObjcId binds to "objc:NSApplication.-windowWithWindowNumber:"
   private foreign handler ObjC_NSWindowStyleMask(in pObj as ObjcId) returns CLong binds to "objc:NSWindow.-styleMask"
-  private foreign handler ObjC_NSWindowToggleFullScreen(in pObj as ObjcId, pSender as optional ObjcId) returns nothing binds to "objc:NSWindow.-toggleFullScreen:"
+  private foreign handler ObjC_NSWindowToggleFullScreen(in pObj as ObjcId, in pSender as optional ObjcId) returns nothing binds to "objc:NSWindow.-toggleFullScreen:"
   private foreign handler ObjC_NSWindowSetCollectionBehavior(in pObj as ObjcId, in pOptions as CInt) returns nothing binds to "objc:NSWindow.-setCollectionBehavior:"
   private foreign handler ObjC_NSWindowGetCollectionBehavior(in pObj as ObjcId) returns CInt binds to "objc:NSWindow.-collectionBehavior"
   private foreign handler ObjC_NSWindowSetIgnoresMouseEvents(in pObj as ObjcId, in pBool as CBool) returns nothing binds to "objc:NSWindow.-setIgnoresMouseEvents:"
