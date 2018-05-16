@@ -7,12 +7,19 @@ library com.livecode.extensions.devore.nsrunningapplication
   metadata author is "Trevor DeVore"
   metadata version is "0.1.0"
 
-  private foreign handler ObjC_NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
+  private foreign handler ObjC_NSWorkspaceSharedWorkspace() \
+        returns ObjcId \
+        binds to "objc:NSWorkspace.+sharedWorkspace"
 
-  private foreign handler ObjC_NSRunningApplicationAlloc() returns ObjcRetainedId binds to "objc:NSRunningApplication.+alloc"
-  private foreign handler ObjC_NSRunningApplicationRunningApplicationWithProcessIdentifier(in pObj as ObjcId, in pId as CInt) returns ObjcId binds to "objc:NSRunningApplication.+runningApplicationWithProcessIdentifier:"
-  private foreign handler ObjC_NSRunningApplicationRunningApplicationsWithBundleIdentifier(in pObj as ObjcId, in pBundleId as ObjcId) returns ObjcId binds to "objc:NSRunningApplication.+runningApplicationsWithBundleIdentifier:"
-  private foreign handler ObjC_NSRunningApplicationActivateWithOptions(in pObj as ObjcId, in pOptions as CInt) returns Boolean binds to "objc:NSRunningApplication.activateWithOptions:"
+  private foreign handler ObjC_NSRunningApplicationRunningApplicationWithProcessIdentifier(in pId as CInt) \
+        returns ObjcId \
+        binds to "objc:NSRunningApplication.+runningApplicationWithProcessIdentifier:"
+  private foreign handler ObjC_NSRunningApplicationRunningApplicationsWithBundleIdentifier(in pBundleId as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSRunningApplication.+runningApplicationsWithBundleIdentifier:"
+  private foreign handler ObjC_NSRunningApplicationActivateWithOptions(in pObj as ObjcId, in pOptions as CInt) \
+        returns Boolean \
+        binds to "objc:NSRunningApplication.activateWithOptions:"
 
 
   /**
@@ -79,9 +86,7 @@ library com.livecode.extensions.devore.nsrunningapplication
     end repeat
 
     unsafe
-      put ObjC_NSRunningApplicationAlloc() into runningApp
-      put ObjC_NSRunningApplicationRunningApplicationWithProcessIdentifier(runningApp, pPid) into runningApp
-      log runningApp
+      put ObjC_NSRunningApplicationRunningApplicationWithProcessIdentifier(pPid) into runningApp
       if runningApp is not nothing then
         put ObjC_NSRunningApplicationActivateWithOptions(runningApp, tOptions) into wasActivated
       end if
