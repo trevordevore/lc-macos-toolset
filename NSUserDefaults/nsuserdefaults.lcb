@@ -1,0 +1,10 @@
+library community.lvecode.trevordevore.nsuserdefaults
+
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "NSUserDefaults"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.0.1"
+
+end library
