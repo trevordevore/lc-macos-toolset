@@ -7,4 +7,146 @@ library community.lvecode.trevordevore.nsuserdefaults
   metadata author is "Trevor DeVore"
   metadata version is "0.0.1"
 
+
+  private foreign handler ObjC_NSUserDefaultsStandardUserDefaults() \
+        returns ObjcId \
+        binds to "objc:NSUserDefaults.+standardUserDefaults"
+  private foreign handler ObjC_NSUserDefaultsObjectForKey (in pObj as ObjcId, in defaultName as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSUserDefaults.-objectForKey:"
+  private foreign handler ObjC_NSUserDefaultsURLForKey (in pObj as ObjcId, in nsURL as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSUserDefaults.-URLForKey:"
+  private foreign handler ObjC_NSUserDefaultsArrayForKey (in pObj as ObjcId, in defaultName as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSUserDefaults.-arrayForKey:"
+  private foreign handler ObjC_NSUserDefaultsDictionaryForKey (in pObj as ObjcId, in defaultName as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSUserDefaults.-dictionaryForKey:"
+  private foreign handler ObjC_NSUserDefaultsStringForKey (in pObj as ObjcId, in defaultName as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSUserDefaults.-stringForKey:"
+  private foreign handler ObjC_NSUserDefaultsStringArrayForKey (in pObj as ObjcId, in defaultName as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSUserDefaults.-stringArrayForKey:"
+  private foreign handler ObjC_NSUserDefaultsDataForKey (in pObj as ObjcId, in defaultName as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSUserDefaults.-dataForKey:"
+  private foreign handler ObjC_NSUserDefaultsBoolForKey (in pObj as ObjcId, in defaultName as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSUserDefaults.-boolForKey:"
+  private foreign handler ObjC_NSUserDefaultsIntegerForKey (in pObj as ObjcId, in defaultName as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSUserDefaults.-integerForKey:"
+  private foreign handler ObjC_NSUserDefaultsFloatForKey (in pObj as ObjcId, in defaultName as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSUserDefaults.-floatForKey:"
+  private foreign handler ObjC_NSUserDefaultsDoubleForKey (in pObj as ObjcId, in defaultName as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSUserDefaults.-doubleForKey:"
+  private foreign handler ObjC_NSUserDefaultsDictionaryRepresentation (in pObj as ObjcId, in defaultName as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSUserDefaults.-dictionaryRepresentation:"
+
+  private foreign handler ObjC_NSUserDefaultsSetObjectForKey (in pObj as ObjcId, in pObject as ObjcId, in defaultName as ObjcId) \
+        returns nothing \
+        binds to "objc:NSUserDefaults.-setObject:forKey:"
+  private foreign handler ObjC_NSUserDefaultsSetFloatForKey (in pObj as ObjcId, in pFloat as CFloat, in defaultName as ObjcId) \
+        returns nothing \
+        binds to "objc:NSUserDefaults.-setFloat:forKey:"
+  private foreign handler ObjC_NSUserDefaultsSetDoubleForKey (in pObj as ObjcId, in pDouble as CDouble, in defaultName as ObjcId) \
+        returns nothing \
+        binds to "objc:NSUserDefaults.-setDouble:forKey:"
+  private foreign handler ObjC_NSUserDefaultsSetIntegerForKey (in pObj as ObjcId, in pInteger as CInt, in defaultName as ObjcId) \
+        returns nothing \
+        binds to "objc:NSUserDefaults.-setInteger:forKey:"
+  private foreign handler ObjC_NSUserDefaultsSetBoolForKey (in pObj as ObjcId, in pBool as CBool, in defaultName as ObjcId) \
+        returns nothing \
+        binds to "objc:NSUserDefaults.-setBool:forKey:"
+  private foreign handler ObjC_NSUserDefaultsSetURLForKey (in pObj as ObjcId, in pURL as ObjcId, in defaultName as ObjcId) \
+        returns nothing \
+        binds to "objc:NSUserDefaults.-setURL:forKey:"
+
+  private foreign handler ObjC_NSUserDefaultsRemoveObjectForKey (in pObj as ObjcId, in defaultName as ObjcId) \
+        returns nothing \
+        binds to "objc:NSUserDefaults.-removeObjectForKey:"
+
+  private foreign handler ObjC_NSUserDefaultsRegisterDefaults (in pObj as ObjcId, in nsDict as ObjcId) \
+        returns nothing \
+        binds to "objc:NSUserDefaults.-registerDefaults:"
+
+
+  /**
+  Summary: Sets the string value for a default.
+
+  Parameter:
+  pDefault: The name of the default.
+  pString: The value to set.
+
+  Returns: nothing
+  */
+  public handler NSUserDefaultsSetStringForKey(in pDefault as String, in pString as String) returns nothing
+    unsafe
+      ObjC_NSUserDefaultsSetObjectForKey(_sharedObject(), StringToNSString(pString), StringToNSString(pDefault))
+    end unsafe
+  end handler
+
+
+  /**
+  Summary: Returns the string value for a default.
+
+  Parameter:
+  pDefault: The name of the default.
+
+  Returns: String
+  */
+  public handler NSUserDefaultsGetStringForKey(in pDefault as String) returns String
+    variable tString as optional ObjcObject
+
+    unsafe
+      put ObjC_NSUserDefaultsObjectForKey(_sharedObject(), StringToNSString(pDefault)) into tString
+    end unsafe
+
+    if tString is nothing then
+      return ""
+    else
+      return StringFromNSString(tString)
+    end if
+  end handler
+
+
+  /**
+  Summary: Detects whether or not a preference has been set.
+
+  Parameter:
+  pDefaultName: The name of the default to check.
+
+  Returns: Boolean
+  */
+  public handler NSUserDefaultsDefaultHasBeenSet(in pDefaultName as String) returns Boolean
+    variable tObject as optional ObjcObject
+
+    unsafe
+      // ObjectForKey returns nil if defaults hasn't been set
+      put ObjC_NSUserDefaultsObjectForKey(_sharedObject(), StringToNSString(pDefaultName)) into tObject
+    end unsafe
+
+    return tObject is not nothing
+  end handler
+
+  /**
+  Summary: Returns the shared user defaults object
+
+  Returns: ObjcObject
+  */
+  private handler _sharedObject() returns ObjcObject
+    variable sharedObject
+
+    unsafe
+      put ObjC_NSUserDefaultsStandardUserDefaults() into sharedObject
+    end unsafe
+
+    return sharedObject
+  end handler
+
 end library
