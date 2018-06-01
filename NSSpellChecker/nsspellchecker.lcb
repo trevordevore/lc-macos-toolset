@@ -39,6 +39,10 @@ library community.livecode.trevordevore.nsspellchecker
   private foreign handler ObjC_NSSpellCheckerCheckSpellingOfString (in pObj as ObjcId, in stringToCheck as ObjcId, in startAt as CInt) \
         returns NSRange \
         binds to "objc:NSSpellChecker.-checkSpellingOfString:startingAt:"
+  private foreign handler ObjC_NSSpellCheckerCheckSpellingOfStringWithOptions \
+        (in pObj as ObjcId, in stringToCheck as ObjcId, in startAt as CInt, in pLanguage as ObjcId, in wrapFlag as CBool, in docTag as CUInt, out wordCount as CUInt) \
+        returns NSRange \
+        binds to "objc:NSSpellChecker.-checkSpellingOfString:startingAt:language:wrap:inSpellDocumentWithTag:wordCount:"
 
   /**
   Summary: Tells you whether or not the shared spell checker has been initialized.
@@ -193,6 +197,51 @@ library community.livecode.trevordevore.nsspellchecker
 
     unsafe
       put ObjC_NSSpellCheckerCheckSpellingOfString(_sharedObject(), StringToNSString(pString), pStartingAt) into tRange
+      // Currently this generates an error if ObjC_NSSpellCheckerCheckSpellingOfString() didn't find
+      // any misspellings and range is empty.
+      if tRange is not nothing then
+        put tRange into tRangeList
+      end if
+    end unsafe
+
+    if tRangeList then
+      return (element 1 of tRangeList + 1) formatted as string \
+            & "," & \
+            (element 1 of tRangeList + element 2 of tRangeList) formatted as string
+    else
+      return ""
+    end if
+  end handler
+
+
+  /**
+  Summary: Returns the char indexes of the first misspelled word in a string of text.
+
+  Parameters:
+  pString: The string to spell check.
+  pStartAt: The character to start at.
+
+  Description:
+
+  Returns: Comma-delimited list of two numbers. The first number is the starting char index of the first misspelled word. The second number is the ending char index of the misspelled word.
+  */
+  public handler NSSpellCheckerCheckSpellingOfStringWithOptions(in pString as String, in pStartingAt as Integer, \
+        in pLanguage as String, in pWrapFlag as Boolean, in pDocTag as Number, out rWordCount as Number) returns String
+    variable tRange as optional NSRange
+    variable tRangeList as optional List
+    variable tLanguage as optional ObjcObject
+
+    // LC is 1-based. Obj-C is 0-based
+    subtract 1 from pStartingAt
+    if pLanguage is empty then
+      put nothing into tLanguage
+    else
+      put StringToNSString(pLanguage) into tLanguage
+    end if
+
+    unsafe
+      put ObjC_NSSpellCheckerCheckSpellingOfStringWithOptions(_sharedObject(), StringToNSString(pString), \
+            pStartingAt, tLanguage, pWrapFlag, pDocTag, rWordCount) into tRange
       // Currently this generates an error if ObjC_NSSpellCheckerCheckSpellingOfString() didn't find
       // any misspellings and range is empty.
       if tRange is not nothing then
