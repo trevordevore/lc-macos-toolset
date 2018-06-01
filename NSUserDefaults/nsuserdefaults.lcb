@@ -8,9 +8,15 @@ library community.lvecode.trevordevore.nsuserdefaults
   metadata version is "0.0.1"
 
 
+  private foreign handler ObjC_NSUserDefaultsAlloc() \
+        returns ObjcRetainedId \
+        binds to "objc:NSUserDefaults.+alloc"
   private foreign handler ObjC_NSUserDefaultsStandardUserDefaults() \
         returns ObjcId \
         binds to "objc:NSUserDefaults.+standardUserDefaults"
+  private foreign handler ObjC_NSUserDefaultsInitWithSuiteName (in pObj as ObjcId, in pSuiteName as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSUserDefaults.-initWithSuiteName:"
   private foreign handler ObjC_NSUserDefaultsObjectForKey (in pObj as ObjcId, in defaultName as ObjcId) \
         returns ObjcId \
         binds to "objc:NSUserDefaults.-objectForKey:"
@@ -76,6 +82,42 @@ library community.lvecode.trevordevore.nsuserdefaults
         binds to "objc:NSUserDefaults.-registerDefaults:"
 
 
+  private variable mNSUserDefaultsInstance as optional ObjcObject
+
+
+  /**
+  Summary: Sets the database that the NSUserDefaults calls will use.
+
+  Description:
+  By default all NSUserDefaults handlers in this library will use the standardUserDefaults for
+  the currently running application. Calling this handler with the name of a preference database
+  will change the target database.
+
+  ```
+  put NSUserDefaultsInitWithSuiteName("com.apple.Preview")
+  put NSUserDefaultsGetStringForKey("NSNavLastRootDirectory")
+  ```
+
+  Returns: nothing
+  */
+  public handler NSUserDefaultsInitWithSuiteName(in pSuiteName as String) returns nothing
+    variable tUserDefaults as ObjcObject
+
+    // Need to clear out the variable
+    if mNSUserDefaultsInstance is not nothing then
+      put nothing into mNSUserDefaultsInstance
+    end if
+
+    if pSuiteName is not empty then
+      unsafe
+        put ObjC_NSUserDefaultsAlloc() into tUserDefaults
+        put ObjC_NSUserDefaultsInitWithSuiteName(tUserDefaults, StringToNSString(pSuiteName)) into tUserDefaults
+        put tUserDefaults into mNSUserDefaultsInstance
+      end unsafe
+    end if
+  end handler
+
+
   /**
   Summary: Sets the string value for a default.
 
@@ -87,7 +129,7 @@ library community.lvecode.trevordevore.nsuserdefaults
   */
   public handler NSUserDefaultsSetStringForKey(in pDefault as String, in pString as String) returns nothing
     unsafe
-      ObjC_NSUserDefaultsSetObjectForKey(_sharedObject(), StringToNSString(pString), StringToNSString(pDefault))
+      ObjC_NSUserDefaultsSetObjectForKey(_defaultsObject(), StringToNSString(pString), StringToNSString(pDefault))
     end unsafe
   end handler
 
@@ -104,13 +146,52 @@ library community.lvecode.trevordevore.nsuserdefaults
     variable tString as optional ObjcObject
 
     unsafe
-      put ObjC_NSUserDefaultsObjectForKey(_sharedObject(), StringToNSString(pDefault)) into tString
+      put ObjC_NSUserDefaultsStringForKey(_defaultsObject(), StringToNSString(pDefault)) into tString
     end unsafe
 
     if tString is nothing then
       return ""
     else
       return StringFromNSString(tString)
+    end if
+  end handler
+
+
+  /**
+  Summary: Sets the string value for a default.
+
+  Parameter:
+  pDefault: The name of the default.
+  pString: The value to set.
+
+  Returns: nothing
+  */
+  public handler NSUserDefaultsSetDataForKey(in pDefault as String, in pData as Data) returns nothing
+    unsafe
+      ObjC_NSUserDefaultsSetObjectForKey(_defaultsObject(), DataToNSData(pData), StringToNSString(pDefault))
+    end unsafe
+  end handler
+
+
+  /**
+  Summary: Returns the string value for a default.
+
+  Parameter:
+  pDefault: The name of the default.
+
+  Returns: String
+  */
+  public handler NSUserDefaultsGetDataForKey(in pDefault as String) returns optional Data
+    variable tData as optional ObjcObject
+
+    unsafe
+      put ObjC_NSUserDefaultsDataForKey(_defaultsObject(), StringToNSString(pDefault)) into tData
+    end unsafe
+
+    if tData is nothing then
+      return nothing
+    else
+      return DataFromNSData(tData)
     end if
   end handler
 
@@ -128,7 +209,7 @@ library community.lvecode.trevordevore.nsuserdefaults
 
     unsafe
       // ObjectForKey returns nil if defaults hasn't been set
-      put ObjC_NSUserDefaultsObjectForKey(_sharedObject(), StringToNSString(pDefaultName)) into tObject
+      put ObjC_NSUserDefaultsObjectForKey(_defaultsObject(), StringToNSString(pDefaultName)) into tObject
     end unsafe
 
     return tObject is not nothing
@@ -139,14 +220,18 @@ library community.lvecode.trevordevore.nsuserdefaults
 
   Returns: ObjcObject
   */
-  private handler _sharedObject() returns ObjcObject
-    variable sharedObject
+  private handler _defaultsObject() returns ObjcObject
+    variable defaultsObject as ObjcObject
 
     unsafe
-      put ObjC_NSUserDefaultsStandardUserDefaults() into sharedObject
+      if mNSUserDefaultsInstance is nothing then
+        put ObjC_NSUserDefaultsStandardUserDefaults() into defaultsObject
+      else
+        put mNSUserDefaultsInstance into defaultsObject
+      end if
     end unsafe
 
-    return sharedObject
+    return defaultsObject
   end handler
 
 end library
