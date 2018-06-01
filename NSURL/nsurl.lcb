@@ -23,7 +23,9 @@ library com.livecode.extensions.devore.nsurl
 
   Parameters:
   pFilename:
-  pOptions: "minimal", "bookmark file", "security scope", "read only access"
+  pOptions: "minimal", "bookmark file", "security scope", "read only  access"
+  pValuesForKeys: Comma-delimited list of key name for NSURL resource properties to store.
+  pRelativeToURL: The url that the bookmark data will be relative to.
 
   Description:
   This function can be used for accessing files across sessions in a sandbox environment. If you pass in
@@ -33,9 +35,10 @@ library com.livecode.extensions.devore.nsurl
 
   Returns:
   */
-  public handler NSURLGetBookmarkDataWithOptions(in pFilename as String, in pOptions as String, in pRelativeToURL as String) returns optional Data
+  public handler NSURLGetBookmarkDataWithOptions(in pFilename as String, in pOptions as String, in pValuesForKeys as String, in pRelativeToURL as String) returns optional Data
     variable tOptions as List
     variable tOption as String
+    variable tResourceKeys as String
     variable tBookmarkOptions as Integer
 
     variable tNSURL as optional ObjcObject
@@ -48,6 +51,8 @@ library com.livecode.extensions.devore.nsurl
       put tBookmarkOptions bitwise or _bookmarkOptionTypes(tOption) into tBookmarkOptions
     end repeat
 
+    split pValuesForKeys by "," into tResourceKeys
+
     if pRelativeToURL is not empty then
       put StringToNSString(pRelativeToURL) into tRelativeToURL
     end if
@@ -57,7 +62,7 @@ library com.livecode.extensions.devore.nsurl
       put ObjC_NSDataAlloc() into tNSData
       put ObjC_NSURLInitFileURLWithPath(tNSURL, StringToNSString(pFilename)) into tNSURL
       if tNSURL is not nothing then
-        put ObjC_NSURLBookMarkDataWithOptions(tNSURL, tBookmarkOptions, nothing, tRelativeToURL, tNSError) into tNSData
+        put ObjC_NSURLBookMarkDataWithOptions(tNSURL, tBookmarkOptions, ListToNSArray(tResourceKeys), tRelativeToURL, tNSError) into tNSData
       end if
     end unsafe
 
