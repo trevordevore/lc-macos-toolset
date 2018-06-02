@@ -54,6 +54,13 @@ library community.lvecode.trevordevore.nsuserdefaults
         returns ObjcId \
         binds to "objc:NSUserDefaults.-dictionaryRepresentation"
 
+  private foreign handler ObjC_NSUserDefaultsPersistentDomainForName (in pObj as ObjcId, in domainName as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSUserDefaults.-persistentDomainForName:"
+  private foreign handler ObjC_NSUserDefaultsRemovePersistentDomainForName (in pObj as ObjcId, in domainName as ObjcId) \
+        returns nothing \
+        binds to "objc:NSUserDefaults.-removePersistentDomainForName:"
+
   private foreign handler ObjC_NSUserDefaultsSetObjectForKey (in pObj as ObjcId, in pObject as ObjcId, in defaultName as ObjcId) \
         returns nothing \
         binds to "objc:NSUserDefaults.-setObject:forKey:"
@@ -216,22 +223,78 @@ library community.lvecode.trevordevore.nsuserdefaults
   end handler
 
 
-    /**
-  Summary: Detects whether or not a preference has been set.
+  /**
+  Summary: Returns a dictionary that contains a union of all key-value pairs in the domains in the search list.
 
   Parameter:
 
-  Returns: Boolean
+  Returns: String
   */
-  public handler NSUserDefaultsDictionaryRepresentation() returns nothing
+  public handler NSUserDefaultsDictionaryRepresentation() returns String
     variable tDictionary as optional ObjcObject
     variable tDefaults as Array
+    variable tKeysList as List
+    variable tKeys as String
 
     unsafe
       put ObjC_NSUserDefaultsDictionaryRepresentation(_defaultsObject()) into tDictionary
     end unsafe
     put ArrayFromNSDictionary(tDictionary) into tDefaults
+
+    put the keys of tDefaults into tKeysList
+    sort tKeysList in ascending text order
+    combine tKeysList with "\n" into tKeys
+    return tKeys
+  end handler
+
+
+  /**
+  Summary: Returns a dictionary representation of the defaults for the specified domain.
+
+  Parameter:
+  pDomainName: The name of the target domain to target.
+
+  Returns: Array
+  */
+  public handler NSUserDefaultsPersistentDomainForName(in pDomainName as String) returns String
+    variable tDictionary as optional ObjcObject
+    variable tDefaults as Array
+    variable tKeysList as List
+    variable tKeys as String
+
+    unsafe
+      put ObjC_NSUserDefaultsPersistentDomainForName(_defaultsObject(), StringToNSString(pDomainName)) into tDictionary
+    end unsafe
+    if tDictionary is not nothing then
+      put ArrayFromNSDictionary(tDictionary) into tDefaults
+
+      // TODO: Loop through array keys and fill in array that is returned to caller.
+      // Some values will be strings, others will be dictionaries or other values.
+      // Need to determine type of object id points to and call the correction conversion handler.
+      // `log` does this automatically so look at it in the source code
+
+      put the keys of tDefaults into tKeysList
+      sort tKeysList in ascending text order
+      combine tKeysList with "\n" into tKeys
+    end if
     log tDefaults
+
+    return tKeys
+  end handler
+
+
+  /**
+  Summary: Removes the contents of the specified persistent domain from the user’s defaults.
+
+  Parameter:
+  pDomainName: The name of the target domain to target.
+
+  Returns: String
+  */
+  public handler NSUserDefaultsRemovePersistentDomainForName(in pDomainName as String) returns nothing
+    unsafe
+      ObjC_NSUserDefaultsRemovePersistentDomainForName(_defaultsObject(), StringToNSString(pDomainName))
+    end unsafe
   end handler
 
 
