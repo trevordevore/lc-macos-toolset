@@ -5,7 +5,7 @@ library community.lvecode.trevordevore.nsuserdefaults
 
   metadata title is "NSUserDefaults"
   metadata author is "Trevor DeVore"
-  metadata version is "0.0.1"
+  metadata version is "0.1.0"
 
 
   private foreign handler ObjC_NSUserDefaultsAlloc() \
@@ -50,9 +50,9 @@ library community.lvecode.trevordevore.nsuserdefaults
   private foreign handler ObjC_NSUserDefaultsDoubleForKey (in pObj as ObjcId, in defaultName as ObjcId) \
         returns ObjcId \
         binds to "objc:NSUserDefaults.-doubleForKey:"
-  private foreign handler ObjC_NSUserDefaultsDictionaryRepresentation (in pObj as ObjcId, in defaultName as ObjcId) \
+  private foreign handler ObjC_NSUserDefaultsDictionaryRepresentation (in pObj as ObjcId) \
         returns ObjcId \
-        binds to "objc:NSUserDefaults.-dictionaryRepresentation:"
+        binds to "objc:NSUserDefaults.-dictionaryRepresentation"
 
   private foreign handler ObjC_NSUserDefaultsSetObjectForKey (in pObj as ObjcId, in pObject as ObjcId, in defaultName as ObjcId) \
         returns nothing \
@@ -213,6 +213,40 @@ library community.lvecode.trevordevore.nsuserdefaults
     end unsafe
 
     return tObject is not nothing
+  end handler
+
+
+    /**
+  Summary: Detects whether or not a preference has been set.
+
+  Parameter:
+
+  Returns: Boolean
+  */
+  public handler NSUserDefaultsDictionaryRepresentation() returns nothing
+    variable tDictionary as optional ObjcObject
+    variable tDefaults as Array
+
+    unsafe
+      put ObjC_NSUserDefaultsDictionaryRepresentation(_defaultsObject()) into tDictionary
+    end unsafe
+    put ArrayFromNSDictionary(tDictionary) into tDefaults
+    log tDefaults
+  end handler
+
+
+  /**
+  Summary: Clears the value for a preference.
+
+  Parameter:
+  pDefaultName: The name of the default to check.
+
+  Returns: nothing
+  */
+  public handler NSUserDefaultsRemoveObjectForKey(in pDefaultName as String)
+    unsafe
+      ObjC_NSUserDefaultsRemoveObjectForKey(_defaultsObject(), StringToNSString(pDefaultName))
+    end unsafe
   end handler
 
   /**
