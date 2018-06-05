@@ -123,7 +123,7 @@ library community.livecode.trevordevore.nsuserdefaults
   Returns: nothing
   */
   public handler NSUserDefaultsInitWithSuiteName(in pSuiteName as String) returns nothing
-    variable tUserDefaults as ObjcObject
+    variable tUserDefaults as optional ObjcObject
 
     // Need to clear out the variable
     if mNSUserDefaultsInstance is not nothing then
@@ -133,6 +133,8 @@ library community.livecode.trevordevore.nsuserdefaults
     if pSuiteName is not empty then
       unsafe
         put ObjC_NSUserDefaultsAlloc() into tUserDefaults
+        // tUserDefaults can be null when calling this with a suite name that matches app identifier in a standalone.
+        // That is fine as the standard user defaults will be used which gives the same result.
         put ObjC_NSUserDefaultsInitWithSuiteName(tUserDefaults, StringToNSString(pSuiteName)) into tUserDefaults
         put tUserDefaults into mNSUserDefaultsInstance
       end unsafe
