@@ -22,7 +22,9 @@ library com.livecode.extensions.devore.nswindow
   private foreign handler ObjC_NSWindowGetRepresentedFilename(in pObj as ObjcId) returns ObjcId binds to "objc:NSWindow.-representedFilename"
   private foreign handler ObjC_NSWindowSetRepresentedFilename(in pObj as ObjcId, in pFilename as ObjcId) returns nothing binds to "objc:NSWindow.-setRepresentedFilename:"
 
-  private foreign handler CGWindowListCopyWindowInfo(in pListOptions as Integer, in pRelativeToWindow as CUint) returns ObjcRetainedId binds to "c:CoreGraphics.framework>CGWindowListCopyWindowInfo"
+  private foreign handler CGWindowListCopyWindowInfo(in pListOptions as Integer, in pRelativeToWindow as CUint) \
+        returns ObjcRetainedId \
+        binds to "c:CoreGraphics.framework>CGWindowListCopyWindowInfo"
 
   private constant kCGNullWindowId is 0
 
@@ -32,7 +34,7 @@ library com.livecode.extensions.devore.nswindow
 
     unsafe
       put ObjC_NSApplicationSharedApplication() into tNSApp
-      put ObjC_NSAppWindowWithWindowNumber(tNSApp, kCGNullWindowId) into tWindow
+      put ObjC_NSAppWindowWithWindowNumber(tNSApp, pWindowId) into tWindow
     end unsafe
 
     return tWindow
