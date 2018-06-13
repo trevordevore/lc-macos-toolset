@@ -9,7 +9,8 @@ library com.livecode.extensions.devore.nswindow
 
   private foreign handler ObjC_NSApplicationSharedApplication() returns ObjcId binds to "objc:NSApplication.+sharedApplication"
   private foreign handler ObjC_NSAppWindowWithWindowNumber(in pObj as ObjcId, in pWindowNumber as CLong) returns ObjcId binds to "objc:NSApplication.-windowWithWindowNumber:"
-  private foreign handler ObjC_NSWindowStyleMask(in pObj as ObjcId) returns CLong binds to "objc:NSWindow.-styleMask"
+  private foreign handler ObjC_NSWindowGetStyleMask(in pObj as ObjcId) returns CLong binds to "objc:NSWindow.-styleMask"
+  private foreign handler ObjC_NSWindowSetStyleMask(in pObj as ObjcId, in pOptions as CInt) returns nothing binds to "objc:NSWindow.-setStyleMask:"
   private foreign handler ObjC_NSWindowToggleFullScreen(in pObj as ObjcId, in pSender as optional ObjcId) returns nothing binds to "objc:NSWindow.-toggleFullScreen:"
   private foreign handler ObjC_NSWindowSetCollectionBehavior(in pObj as ObjcId, in pOptions as CInt) returns nothing binds to "objc:NSWindow.-setCollectionBehavior:"
   private foreign handler ObjC_NSWindowGetCollectionBehavior(in pObj as ObjcId) returns CInt binds to "objc:NSWindow.-collectionBehavior"
@@ -215,6 +216,93 @@ library com.livecode.extensions.devore.nswindow
   end handler
 
 
+  /**
+  Summary: Gets the styles for a window.
+
+  Parameters:
+  pWindowId: The `windowId` property of a stack.
+
+  Description:
+  See `NSWindowStyleMasks()` for a list the available collection behaviors.
+
+  Returns: Comma-delimited list of styles
+  */
+  public handler NSWindowGetStyleMask(in pWindowId as Integer) returns String
+    variable tWindow as optional ObjcObject
+    variable tAllStyles as Array
+    variable tWindowStyles as Integer
+    variable tOptions as List
+    variable tOption as String
+    variable tOptionsStr as String
+
+    put _GetNSWindow(pWindowId) into tWindow
+    put _GetStyles() into tAllStyles
+
+    if tWindow is nothing then
+      log "window not found"
+    else
+      unsafe
+        put ObjC_NSWindowGetStyleMask(tWindow) into tWindowStyles
+      end unsafe
+
+      if tWindowStyles is 0 then
+        push "borderless" onto tOptions
+      else
+        repeat for each key tOption in tAllStyles
+          if tWindowStyles bitwise and tAllStyles[tOption] > 0 then
+            push tOption onto tOptions
+          end if
+        end repeat
+      end if
+
+      sort tOptions in ascending text order
+
+      combine tOptions with "," into tOptionsStr
+    end if
+
+    return tOptionsStr
+  end handler
+
+
+  /**
+  Summary: Gets the styles for a window.
+
+  Parameters:
+  pWindowId: The `windowId` property of a stack.
+  pStyles: Comma-delimited list of styles.
+
+  Description:
+  See `NSWindowStyleMasks()` for a list the available collection behaviors.
+
+  Returns: Comma-delimited list of collection behaviors
+  */
+  public handler NSWindowSetStyleMask(in pWindowId as Integer, in pStyles as String) returns nothing
+    variable tWindow as optional ObjcObject
+    variable tStylesList as List
+    variable tStyle as String
+    variable tStyles as Integer
+    variable tAllStyles as Array
+
+    split pStyles by "," into tStylesList
+
+    put _GetNSWindow(pWindowId) into tWindow
+    put _GetStyles() into tAllStyles
+
+    repeat for each element tStyle in tStylesList
+      if tAllStyles[tStyle] is 0 then
+        put 0 into tStyles
+        exit repeat
+      else
+        put tStyles bitwise or tAllStyles[tStyle] into tStyles
+      end if
+    end repeat
+
+    unsafe
+      ObjC_NSWindowSetStyleMask(tWindow, tStyles)
+    end unsafe
+  end handler
+
+
 
   /**
   Summary: Returns whether or not a window has the specified list of styles.
@@ -243,7 +331,7 @@ library com.livecode.extensions.devore.nswindow
       if tWindow is nothing then
         log "window not found"
       else
-        put ObjC_NSWindowStyleMask(tWindow) into tStyleMask
+        put ObjC_NSWindowGetStyleMask(tWindow) into tStyleMask
       end if
     end unsafe
 
@@ -331,7 +419,7 @@ library com.livecode.extensions.devore.nswindow
   end handler
 
 
- /**
+  /**
   Summary: Gets the collection behaviors for a window.
 
   Parameters:
