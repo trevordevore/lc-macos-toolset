@@ -16,7 +16,7 @@ library com.livecode.extensions.devore.nsrunningapplication
         binds to "objc:NSWorkspace.+sharedWorkspace"
 
   private foreign handler ObjC_NSRunningApplicationRunningApplicationWithProcessIdentifier(in pId as CInt) \
-        returns ObjcRetainedId \
+        returns ObjcId \
         binds to "objc:NSRunningApplication.+runningApplicationWithProcessIdentifier:"
   private foreign handler ObjC_NSRunningApplicationRunningApplicationsWithBundleIdentifier(in pBundleId as ObjcId) \
         returns ObjcId \
