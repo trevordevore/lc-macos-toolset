@@ -7,10 +7,35 @@ library com.livecode.extensions.devore.nscursor
   metadata author is "Trevor DeVore"
   metadata version is "0.1.0"
 
+  public foreign type CGImageRef binds to "MCAggregateTypeInfo:r"
+  public foreign type NSPoint binds to "MCAggregateTypeInfo:ff"
+  public foreign type NSSize binds to "MCAggregateTypeInfo:ff"
+
   private foreign handler ObjC_NSCursorAlloc() returns ObjcRetainedId binds to "objc:NSCursor.+alloc"
   private foreign handler ObjC_NSCursorCurrentCursor() returns ObjcId binds to "objc:NSCursor.+currentCursor"
   private foreign handler ObjC_NSCursorCurrentSystemCursor() returns ObjcId binds to "objc:NSCursor.+currentSystemCursor"
   private foreign handler ObjC_NSCursorArrowCursor() returns ObjcId binds to "objc:NSCursor.+arrowCursor"
+  private foreign handler ObjC_NSCursorImage(in pCursor as ObjcId) returns ObjcId binds to "objc:NSCursor.-image"
+  private foreign handler ObjC_NSCursorHotspot(in pCursor as ObjcId) \
+        returns NSPoint \
+        binds to "objc:NSCursor.-hotSpot"
+
+  private foreign handler ObjC_NSImageRepresentations(in pImage as ObjcId) returns ObjcId binds to "objc:NSImage.-representations"
+  private foreign handler ObjC_NSImageSize(in pImage as ObjcId) \
+        returns NSSize \
+        binds to "objc:NSImage.-size"
+
+  private foreign handler ObjC_NSImageRepGetCGImage(in pImageRep as ObjcId, in pContext as optional ObjcId, in pHints as optional ObjcId) \
+        returns CGImageRef \
+        binds to "objc:NSImageRep.-CGImageForProposedRect:context:hints:"
+
+  private foreign handler ObjC_NSBitmapImageRepAlloc() returns ObjcRetainedId binds to "objc:NSBitmapImageRep.+alloc"
+  private foreign handler ObjC_NSBitmapImageRepInitWithCGImage(in pImageRep as ObjcId, in pCGImageRef as CGImageRef) \
+        returns ObjcId \
+        binds to "objc:NSBitmapImageRep.-initWithCGImage:"
+  private foreign handler ObjC_NSBitmapImageRepRepresenatationUsingType(in pBitmapImageRep as ObjcId, in pType as CInt, in pProps as optional ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSBitmapImageRep.-representationUsingType:properties:"
 
   /**
   Summary:
@@ -60,6 +85,53 @@ library com.livecode.extensions.devore.nscursor
   end handler
 
 
+  public handler NSCursorGetCurrentCursor() returns Array
+    variable tCursor as ObjcObject
+    variable tImage as ObjcObject
+    variable tImageReps as ObjcObject
+    variable tImageRepsList as List
+    variable tImageRep as ObjcObject
+    variable tBitmapImageRep as ObjcObject
+    variable tCGImageRef as CGImageRef
+    variable tImageData as ObjcObject
+    variable tCursorInfo as Array
+
+    variable tSize as NSSize
+    variable tHotspot as optional NSPoint
+    -- variable tHotspot as List
+
+    unsafe
+      put ObjC_NSCursorCurrentCursor() into tCursor
+
+      -- Causes Crash
+      -- put ObjC_NSCursorHotspot(tCursor) into tHotspot
+
+      put ObjC_NSCursorImage(tCursor) into tImage
+      -- Causes Crash
+      -- put ObjC_NSImageSize(tImage) into tSize
+      put ObjC_NSImageRepresentations(tImage) into tImageReps
+      put ListFromNSArray(tImageReps) into tImageRepsList
+      put element 1 of tImageRepsList into tImageRep
+
+      put ObjC_NSImageRepGetCGImage(tImageRep, nothing, nothing) into tCGImageRef
+
+      put ObjC_NSBitmapImageRepAlloc() into tBitmapImageRep
+      put ObjC_NSBitmapImageRepInitWithCGImage(tBitmapImageRep, tCGImageRef) into tBitmapImageRep
+
+      -- TIFF = 0
+      -- BMP = 1
+      -- GIF = 2
+      -- JPEG = 3
+      -- PNG = 4
+      -- JPEG2000 = 5
+      put ObjC_NSBitmapImageRepRepresenatationUsingType(tBitmapImageRep, 4, nothing) into tImageData
+      put DataFromNSData(tImageData) into tCursorInfo["image"]
+    end unsafe
+
+    return tCursorInfo
+  end handler
+
+
   public handler NSCursorGet(in pCursorType as String) returns Array
     variable tCursorTypes as Array
     variable tType as String
@@ -85,37 +157,4 @@ library com.livecode.extensions.devore.nscursor
 
     return tCursorA
   end handler
-
-    /*
-
-    NSDictionary * scapGetCursor(int pRepresentation, int pCursorType)
-    {
-        NSMutableDictionary * t_return = nil;
-        t_return = [NSMutableDictionary dictionary];
-
-        NSCursor * t_cursor = nil;
-        t_cursor = cursorForCursorType(pCursorType);
-
-        NSImage * t_cursor_image = nil;
-        t_cursor_image = [t_cursor image];
-
-        NSImageRep * t_image_rep = [[t_cursor_image representations] objectAtIndex:pRepresentation-1];
-
-        CGImageRef t_cgRef = [t_image_rep CGImageForProposedRect:NULL
-                                                 context:nil
-                                                   hints:nil];
-        NSBitmapImageRep *t_bitmap = [[NSBitmapImageRep alloc] initWithCGImage:t_cgRef];
-
-        [t_return setObject:[t_bitmap representationUsingType:NSPNGFileType properties:nil] forKey:@"image"];
-
-        NSPoint t_hotspot = [t_cursor hotSpot];
-        [t_return setObject:[NSString stringWithFormat:@"%d,%d",(int)t_hotspot.x,(int)t_hotspot.y] forKey:@"hotspot"];
-
-        NSSize t_size = t_cursor_image.size;
-        [t_return setObject:[NSString stringWithFormat:@"%d",(int)t_size.width] forKey:@"width"];
-        [t_return setObject:[NSString stringWithFormat:@"%d",(int)t_size.height] forKey:@"height"];
-
-        return t_return;
-    }
-    */
 end library
