@@ -7,19 +7,24 @@ library com.livecode.extensions.devore.nsrunningapplication
   metadata author is "Trevor DeVore"
   metadata version is "0.1.0"
 
+  private foreign handler ObjC_NSObjectGetClassName (in pObj as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSObject.-className"
+
   private foreign handler ObjC_NSWorkspaceSharedWorkspace() \
         returns ObjcId \
         binds to "objc:NSWorkspace.+sharedWorkspace"
 
   private foreign handler ObjC_NSRunningApplicationRunningApplicationWithProcessIdentifier(in pId as CInt) \
-        returns ObjcId \
+        returns ObjcRetainedId \
         binds to "objc:NSRunningApplication.+runningApplicationWithProcessIdentifier:"
   private foreign handler ObjC_NSRunningApplicationRunningApplicationsWithBundleIdentifier(in pBundleId as ObjcId) \
         returns ObjcId \
         binds to "objc:NSRunningApplication.+runningApplicationsWithBundleIdentifier:"
+
   private foreign handler ObjC_NSRunningApplicationActivateWithOptions(in pObj as ObjcId, in pOptions as CInt) \
         returns Boolean \
-        binds to "objc:NSRunningApplication.activateWithOptions:"
+        binds to "objc:NSRunningApplication.-activateWithOptions:"
 
 
   /**
@@ -66,7 +71,7 @@ library com.livecode.extensions.devore.nsrunningapplication
 
   Returns:
   */
-  public handler NSRunningApplicationActivateWithOptions(in pPid as Integer, in pOptions as String) returns Boolean
+  public handler NSRunningApplicationActivateWithOptions(in pPid as any, in pOptions as String) returns Boolean
     variable runningApp as optional ObjcObject
     variable tOptionsLookup as Array
     variable tActivationOptions as List
@@ -74,20 +79,44 @@ library com.livecode.extensions.devore.nsrunningapplication
     variable tOptions as Integer
     variable wasActivated as Boolean
 
-    put _GetActivationOptions() into tOptionsLookup
-    split pOptions by "," into tActivationOptions
+    if pOptions is empty then
+      put 0 into tOptions
+    else
+      put _GetActivationOptions() into tOptionsLookup
+      split pOptions by "," into tActivationOptions
 
-    repeat for each element tOption in tActivationOptions
-      if tOption is not among the keys of tOptionsLookup then
-        throw "invalid activation option:" && tOption
-      end if
+      repeat for each element tOption in tActivationOptions
+        if tOption is not among the keys of tOptionsLookup then
+          throw "invalid activation option:" && tOption
+        end if
 
-      put tOptions bitwise or tOptionsLookup[tOption] into tOptions
-    end repeat
+        put tOptions bitwise or tOptionsLookup[tOption] into tOptions
+      end repeat
+    end if
 
     unsafe
-      put ObjC_NSRunningApplicationRunningApplicationWithProcessIdentifier(pPid) into runningApp
+      if pPid is a number then
+        put ObjC_NSRunningApplicationRunningApplicationWithProcessIdentifier(pPid) into runningApp
+      else
+        variable runningAppArray as ObjcObject
+
+        // This returns an array. The first element will have the NSApp object
+        put ObjC_NSRunningApplicationRunningApplicationsWithBundleIdentifier(StringToNSString(pPid)) into runningAppArray
+        if runningAppArray is not nothing then
+          variable tApp as List
+          put ListFromNSArray(runningAppArray) into tApp
+          put element 1 of tApp into runningApp
+        end if
+      end if
       if runningApp is not nothing then
+        variable tClassString as ObjcObject
+        variable tClassName as String
+
+        put ObjC_NSObjectGetClassName(runningApp) into tClassString
+        put StringFromNSString(tClassString) into tClassName
+        log tClassName
+        log tOptions
+
         put ObjC_NSRunningApplicationActivateWithOptions(runningApp, tOptions) into wasActivated
       end if
     end unsafe
