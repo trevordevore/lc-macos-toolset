@@ -8,8 +8,8 @@ library com.livecode.extensions.devore.nscursor
   metadata version is "0.1.0"
 
   public foreign type CGImageRef binds to "MCAggregateTypeInfo:r"
-  public foreign type NSPoint binds to "MCAggregateTypeInfo:ff"
-  public foreign type NSSize binds to "MCAggregateTypeInfo:ff"
+  public foreign type NSPoint binds to "MCAggregateTypeInfo:NN"
+  public foreign type NSSize binds to "MCAggregateTypeInfo:NN"
 
   private foreign handler ObjC_NSCursorAlloc() returns ObjcRetainedId binds to "objc:NSCursor.+alloc"
   private foreign handler ObjC_NSCursorCurrentCursor() returns ObjcId binds to "objc:NSCursor.+currentCursor"
@@ -98,17 +98,24 @@ library com.livecode.extensions.devore.nscursor
 
     variable tSize as NSSize
     variable tHotspot as optional NSPoint
-    -- variable tHotspot as List
+    variable tX as String
+    variable tY as String
 
     unsafe
       put ObjC_NSCursorCurrentCursor() into tCursor
 
-      -- Causes Crash
-      -- put ObjC_NSCursorHotspot(tCursor) into tHotspot
+      put ObjC_NSCursorHotspot(tCursor) into tHotspot
+      format element 1 of tHotspot as string into tX
+      format element 2 of tHotspot as string into tY
+      put tX & "," & tY into tCursorInfo["hotspot"]
 
       put ObjC_NSCursorImage(tCursor) into tImage
-      -- Causes Crash
-      -- put ObjC_NSImageSize(tImage) into tSize
+      put ObjC_NSImageSize(tImage) into tSize
+      format element 1 of tSize as string into tX
+      format element 2 of tSize as string into tY
+      put tX into tCursorInfo["width"]
+      put tY into tCursorInfo["height"]
+
       put ObjC_NSImageRepresentations(tImage) into tImageReps
       put ListFromNSArray(tImageReps) into tImageRepsList
       put element 1 of tImageRepsList into tImageRep
