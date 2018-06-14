@@ -8,34 +8,36 @@ library com.livecode.extensions.devore.nscursor
   metadata version is "0.1.0"
 
   public foreign type CGImageRef binds to "MCAggregateTypeInfo:r"
-  public foreign type NSPoint binds to "MCAggregateTypeInfo:NN"
-  public foreign type NSSize binds to "MCAggregateTypeInfo:NN"
+  public foreign type NSPoint binds to "MCAggregateTypeInfo:qq"
+  public foreign type NSSize binds to "MCAggregateTypeInfo:qq"
 
-  private foreign handler ObjC_NSCursorAlloc() returns ObjcRetainedId binds to "objc:NSCursor.+alloc"
-  private foreign handler ObjC_NSCursorCurrentCursor() returns ObjcId binds to "objc:NSCursor.+currentCursor"
-  private foreign handler ObjC_NSCursorCurrentSystemCursor() returns ObjcId binds to "objc:NSCursor.+currentSystemCursor"
-  private foreign handler ObjC_NSCursorArrowCursor() returns ObjcId binds to "objc:NSCursor.+arrowCursor"
-  private foreign handler ObjC_NSCursorImage(in pCursor as ObjcId) returns ObjcId binds to "objc:NSCursor.-image"
+  private foreign handler ObjC_NSCursorAlloc() \
+        returns ObjcRetainedId binds to "objc:NSCursor.+alloc"
+  private foreign handler ObjC_NSCursorCurrentCursor() \
+        returns ObjcId binds to "objc:NSCursor.+currentCursor"
+  private foreign handler ObjC_NSCursorCurrentSystemCursor() \
+        returns ObjcId binds to "objc:NSCursor.+currentSystemCursor"
+  private foreign handler ObjC_NSCursorArrowCursor() \
+        returns ObjcId binds to "objc:NSCursor.+arrowCursor"
+  private foreign handler ObjC_NSCursorImage(in pCursor as ObjcId) \
+        returns ObjcId binds to "objc:NSCursor.-image"
   private foreign handler ObjC_NSCursorHotspot(in pCursor as ObjcId) \
-        returns NSPoint \
-        binds to "objc:NSCursor.-hotSpot"
+        returns NSPoint binds to "objc:NSCursor.-hotSpot"
 
-  private foreign handler ObjC_NSImageRepresentations(in pImage as ObjcId) returns ObjcId binds to "objc:NSImage.-representations"
+  private foreign handler ObjC_NSImageRepresentations(in pImage as ObjcId) \
+        returns ObjcId binds to "objc:NSImage.-representations"
   private foreign handler ObjC_NSImageSize(in pImage as ObjcId) \
-        returns NSSize \
-        binds to "objc:NSImage.-size"
+        returns NSSize binds to "objc:NSImage.-size"
 
   private foreign handler ObjC_NSImageRepGetCGImage(in pImageRep as ObjcId, in pContext as optional ObjcId, in pHints as optional ObjcId) \
-        returns CGImageRef \
-        binds to "objc:NSImageRep.-CGImageForProposedRect:context:hints:"
+        returns CGImageRef binds to "objc:NSImageRep.-CGImageForProposedRect:context:hints:"
 
-  private foreign handler ObjC_NSBitmapImageRepAlloc() returns ObjcRetainedId binds to "objc:NSBitmapImageRep.+alloc"
+  private foreign handler ObjC_NSBitmapImageRepAlloc() \
+        returns ObjcRetainedId binds to "objc:NSBitmapImageRep.+alloc"
   private foreign handler ObjC_NSBitmapImageRepInitWithCGImage(in pImageRep as ObjcId, in pCGImageRef as CGImageRef) \
-        returns ObjcId \
-        binds to "objc:NSBitmapImageRep.-initWithCGImage:"
+        returns ObjcId binds to "objc:NSBitmapImageRep.-initWithCGImage:"
   private foreign handler ObjC_NSBitmapImageRepRepresenatationUsingType(in pBitmapImageRep as ObjcId, in pType as CInt, in pProps as optional ObjcId) \
-        returns ObjcId \
-        binds to "objc:NSBitmapImageRep.-representationUsingType:properties:"
+        returns ObjcId binds to "objc:NSBitmapImageRep.-representationUsingType:properties:"
 
   /**
   Summary:
@@ -85,7 +87,7 @@ library com.livecode.extensions.devore.nscursor
   end handler
 
 
-  public handler NSCursorGetCurrentCursor() returns Array
+  public handler NSCursorGetCurrentCursorInfo() returns Array
     variable tCursor as ObjcObject
     variable tImage as ObjcObject
     variable tImageReps as ObjcObject
@@ -111,10 +113,8 @@ library com.livecode.extensions.devore.nscursor
 
       put ObjC_NSCursorImage(tCursor) into tImage
       put ObjC_NSImageSize(tImage) into tSize
-      format element 1 of tSize as string into tX
-      format element 2 of tSize as string into tY
-      put tX into tCursorInfo["width"]
-      put tY into tCursorInfo["height"]
+      put element 1 of tSize into tCursorInfo["width"]
+      put element 2 of tSize into tCursorInfo["height"]
 
       put ObjC_NSImageRepresentations(tImage) into tImageReps
       put ListFromNSArray(tImageReps) into tImageRepsList
