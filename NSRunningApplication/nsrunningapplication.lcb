@@ -76,7 +76,7 @@ library com.livecode.extensions.devore.nsrunningapplication
     variable tOptionsLookup as Array
     variable tActivationOptions as List
     variable tOption as String
-    variable tOptions as Integer
+    variable tOptions as Number
     variable wasActivated as Boolean
 
     if pOptions is empty then
@@ -105,7 +105,9 @@ library com.livecode.extensions.devore.nsrunningapplication
         if runningAppArray is not nothing then
           variable tApp as List
           put ListFromNSArray(runningAppArray) into tApp
-          put element 1 of tApp into runningApp
+          if the number of elements in tApp > 0 then
+            put element 1 of tApp into runningApp
+          end if
         end if
       end if
       if runningApp is not nothing then
