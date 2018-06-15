@@ -10,39 +10,51 @@ library community.livecode.trevordevore.nsspellchecker
   public foreign type NSRange binds to "MCAggregateTypeInfo:pp"
 
   private foreign handler ObjC_NSSpellCheckerSharedSpellChecker() \
-        returns ObjcId \
-        binds to "objc:NSSpellChecker.+sharedSpellChecker"
+        returns ObjcId binds to "objc:NSSpellChecker.+sharedSpellChecker"
   private foreign handler ObjC_NSSpellCheckerSharedSpellCheckerExists() \
-        returns CBool \
-        binds to "objc:NSSpellChecker.+sharedSpellCheckerExists"
+        returns CBool binds to "objc:NSSpellChecker.+sharedSpellCheckerExists"
+
+  private foreign handler ObjC_NSSpellCheckerUniqueSpellDocumentTag() \
+        returns CInt binds to "objc:NSSpellChecker.+uniqueSpellDocumentTag"
+  private foreign handler ObjC_NSSpellCheckerCloseSpellDocumentWithTag(in pObj as ObjcId, in pDocTag as CInt) \
+        returns nothing binds to "objc:NSSpellChecker.-closeSpellDocumentWithTag:"
+  private foreign handler ObjC_NSSpellCheckerIgnoreWord(in pObj as ObjcId, in pString as ObjcId, in pDocTag as CInt) \
+        returns nothing binds to "objc:NSSpellChecker.-ignoreWord:inSpellDocumentWithTag:"
+  private foreign handler ObjC_NSSpellCheckerIgnoredWords(in pObj as ObjcId, in pDocTag as CInt) \
+        returns ObjcId binds to "objc:NSSpellChecker.-ignoredWordsInSpellDocumentWithTag:"
+  private foreign handler ObjC_NSSpellCheckerSetIgnoredWords(in pObj as ObjcId, in pArrayOfWords as ObjcId, in pDocTag as CInt) \
+        returns nothing binds to "objc:NSSpellChecker.-setIgnoredWords:inSpellDocumentWithTag:"
+
+  private foreign handler ObjC_NSSpellCheckerHasLearnedWord(in pObj as ObjcId, in pWord as ObjcId) \
+        returns CBool binds to "objc:NSSpellChecker.-hasLearnedWord:"
+  private foreign handler ObjC_NSSpellCheckerUnlearnWord(in pObj as ObjcId, in pWord as ObjcId) \
+        returns nothing binds to "objc:NSSpellChecker.-unlearnWord:"
+  private foreign handler ObjC_NSSpellCheckerLearnWord(in pObj as ObjcId, in pWord as ObjcId) \
+        returns nothing binds to "objc:NSSpellChecker.-learnWord:"
+
   private foreign handler ObjC_NSSpellCheckerAvailableLanguages (in pObj as ObjcId) \
-        returns ObjcId \
-        binds to "objc:NSSpellChecker.-availableLanguages"
+        returns ObjcId binds to "objc:NSSpellChecker.-availableLanguages"
   private foreign handler ObjC_NSSpellCheckerUserPreferredLanguages (in pObj as ObjcId) \
-        returns ObjcId \
-        binds to "objc:NSSpellChecker.-userPreferredLanguages"
+        returns ObjcId binds to "objc:NSSpellChecker.-userPreferredLanguages"
   private foreign handler ObjC_NSSpellCheckerGetAutomaticallyIdentifiesLanguages (in pObj as ObjcId) \
-        returns CBool \
-        binds to "objc:NSSpellChecker.-automaticallyIdentifiesLanguages"
+        returns CBool binds to "objc:NSSpellChecker.-automaticallyIdentifiesLanguages"
   private foreign handler ObjC_NSSpellCheckerSetAutomaticallyIdentifiesLanguages (in pObj as ObjcId, in pBoolean as CBool) \
-        returns nothing \
-        binds to "objc:NSSpellChecker.-setAutomaticallyIdentifiesLanguages:"
+        returns nothing binds to "objc:NSSpellChecker.-setAutomaticallyIdentifiesLanguages:"
   private foreign handler ObjC_NSSpellCheckerGetLanguage (in pObj as ObjcId) \
-        returns ObjcId \
-        binds to "objc:NSSpellChecker.-language"
+        returns ObjcId binds to "objc:NSSpellChecker.-language"
   private foreign handler ObjC_NSSpellCheckerSetLanguage (in pObj as ObjcId, in pLangCode as ObjcId) \
-        returns nothing \
-        binds to "objc:NSSpellChecker.-setLanguage:"
+        returns nothing binds to "objc:NSSpellChecker.-setLanguage:"
+
   private foreign handler ObjC_NSSpellCheckerCountWordsInString (in pObj as ObjcId, in pString as ObjcId, in pLangCode as ObjcId) \
-        returns CInt \
-        binds to "objc:NSSpellChecker.-countWordsInString:language:"
+        returns CInt binds to "objc:NSSpellChecker.-countWordsInString:language:"
   private foreign handler ObjC_NSSpellCheckerCheckSpellingOfString (in pObj as ObjcId, in stringToCheck as ObjcId, in startAt as CInt) \
-        returns NSRange \
-        binds to "objc:NSSpellChecker.-checkSpellingOfString:startingAt:"
+        returns NSRange binds to "objc:NSSpellChecker.-checkSpellingOfString:startingAt:"
   private foreign handler ObjC_NSSpellCheckerCheckSpellingOfStringWithOptions \
-        (in pObj as ObjcId, in stringToCheck as ObjcId, in startAt as CInt, in pLanguage as ObjcId, in wrapFlag as CBool, in docTag as CUInt, out wordCount as CUInt) \
-        returns NSRange \
-        binds to "objc:NSSpellChecker.-checkSpellingOfString:startingAt:language:wrap:inSpellDocumentWithTag:wordCount:"
+        (in pObj as ObjcId, in stringToCheck as ObjcId, in startAt as CInt, in pLanguage as optional ObjcId, in wrapFlag as CBool, in docTag as CUInt, out wordCount as CUInt) \
+        returns NSRange binds to "objc:NSSpellChecker.-checkSpellingOfString:startingAt:language:wrap:inSpellDocumentWithTag:wordCount:"
+  private foreign handler ObjC_NSSpellCheckerGuessesForWordRange (in pObj as ObjcId, in pNSRange as NSRange, in stringToCheck as ObjcId, in pLanguage as optional ObjcId, in docTag as CUInt) \
+        returns ObjcId binds to "objc:NSSpellChecker.-guessesForWordRange:inString:language:inSpellDocumentWithTag:"
+
 
   /**
   Summary: Tells you whether or not the shared spell checker has been initialized.
@@ -58,6 +70,174 @@ library community.livecode.trevordevore.nsspellchecker
     end unsafe
 
     return tExists
+  end handler
+
+
+  /**
+  Summary:
+
+  Description:
+
+  Returns: Integer
+  */
+  public handler NSSpellCheckerUniqueSpellDocumentTag() returns Number
+    variable tDocTag as Number
+
+    unsafe
+      put ObjC_NSSpellCheckerUniqueSpellDocumentTag() into tDocTag
+    end unsafe
+
+    return tDocTag
+  end handler
+
+
+  /**
+  Summary:
+
+  Description:
+
+  Returns:
+  */
+  public handler NSSpellCheckerCloseSpellDocumentWithTag(in pDocTag as optional Number) returns nothing
+    variable sharedObject as ObjcObject
+
+    if pDocTag is nothing then
+      put 0 into pDocTag
+    end if
+
+    unsafe
+      put ObjC_NSSpellCheckerSharedSpellChecker() into sharedObject
+      ObjC_NSSpellCheckerCloseSpellDocumentWithTag(sharedObject, pDocTag)
+    end unsafe
+  end handler
+
+
+  /**
+  Summary:
+
+  Description:
+
+  Returns:
+  */
+  public handler NSSpellCheckerIgnoreWord(in pWord as String, in pDocTag as optional Number) returns nothing
+    variable sharedObject as ObjcObject
+
+    if pDocTag is nothing then
+      put 0 into pDocTag
+    end if
+
+    unsafe
+      put ObjC_NSSpellCheckerSharedSpellChecker() into sharedObject
+      ObjC_NSSpellCheckerIgnoreWord(sharedObject, StringToNSString(pWord), pDocTag)
+    end unsafe
+  end handler
+
+
+  /**
+  Summary:
+
+  Description:
+
+  Returns: Integer
+  */
+  public handler NSSpellCheckerIgnoredWords(in pDocTag as optional Number) returns String
+    variable sharedObject as ObjcObject
+    variable nsArray as optional ObjcObject
+
+    if pDocTag is nothing then
+      put 0 into pDocTag
+    end if
+
+    unsafe
+      put ObjC_NSSpellCheckerSharedSpellChecker() into sharedObject
+      put ObjC_NSSpellCheckerIgnoredWords(sharedObject, pDocTag) into nsArray
+    end unsafe
+
+    if nsArray is not nothing then
+      return _listAsString(ListFromNSArray(nsArray), "\n")
+    else
+      return ""
+    end if
+  end handler
+
+
+  /**
+  Summary:
+
+  Description:
+
+  Returns:
+  */
+  public handler NSSpellCheckerSetIgnoredWords(in pWords as String, in pDocTag as optional Number) returns nothing
+    variable sharedObject as ObjcObject
+    variable tWordList as List
+
+    split pWords by "\n" into tWordList
+
+    if pDocTag is nothing then
+      put 0 into pDocTag
+    end if
+
+    // This doesn't seem to be working corretly.
+
+    unsafe
+      put ObjC_NSSpellCheckerSharedSpellChecker() into sharedObject
+      ObjC_NSSpellCheckerSetIgnoredWords(sharedObject, ListToNSArray(tWordList), pDocTag)
+    end unsafe
+  end handler
+
+
+  /**
+  Summary:
+
+  Description:
+
+  Returns: Integer
+  */
+  public handler NSSpellCheckerHasLearnedWord(in pWord as String) returns Boolean
+    variable sharedObject as ObjcObject
+    variable tBoolean as Boolean
+
+    unsafe
+      put ObjC_NSSpellCheckerSharedSpellChecker() into sharedObject
+      put ObjC_NSSpellCheckerHasLearnedWord(sharedObject, StringToNSString(pWord)) into tBoolean
+    end unsafe
+
+    return tBoolean
+  end handler
+
+
+  /**
+  Summary:
+
+  Description:
+
+  Returns: Integer
+  */
+  public handler NSSpellCheckerUnlearnWord(in pWord as String) returns nothing
+    variable sharedObject as ObjcObject
+
+    unsafe
+      put ObjC_NSSpellCheckerSharedSpellChecker() into sharedObject
+      ObjC_NSSpellCheckerUnlearnWord(sharedObject, StringToNSString(pWord))
+    end unsafe
+  end handler
+
+
+  /**
+  Summary:
+
+  Description:
+
+  Returns: Integer
+  */
+  public handler NSSpellCheckerLearnWord(in pWord as String) returns nothing
+    variable sharedObject as ObjcObject
+
+    unsafe
+      put ObjC_NSSpellCheckerSharedSpellChecker() into sharedObject
+      ObjC_NSSpellCheckerLearnWord(sharedObject, StringToNSString(pWord))
+    end unsafe
   end handler
 
 
@@ -188,11 +368,14 @@ library community.livecode.trevordevore.nsspellchecker
 
   Returns: Comma-delimited list of two numbers. The first number is the starting char index of the first misspelled word. The second number is the ending char index of the misspelled word.
   */
-  public handler NSSpellCheckerCheckSpellingOfString(in pString as String, in pStartingAt as Integer) returns String
+  public handler NSSpellCheckerCheckSpellingOfString(in pString as String, in pStartingAt as optional Number) returns String
     variable tRange as optional NSRange
     variable tRangeList as optional List
 
     // LC is 1-based. Obj-C is 0-based
+    if pStartingAt is nothing then
+      put 1 into pStartingAt
+    end if
     subtract 1 from pStartingAt
 
     unsafe
@@ -204,7 +387,7 @@ library community.livecode.trevordevore.nsspellchecker
       end if
     end unsafe
 
-    if tRangeList then
+    if tRangeList is not nothing then
       return (element 1 of tRangeList + 1) formatted as string \
             & "," & \
             (element 1 of tRangeList + element 2 of tRangeList) formatted as string
@@ -225,18 +408,26 @@ library community.livecode.trevordevore.nsspellchecker
 
   Returns: Comma-delimited list of two numbers. The first number is the starting char index of the first misspelled word. The second number is the ending char index of the misspelled word.
   */
-  public handler NSSpellCheckerCheckSpellingOfStringWithOptions(in pString as String, in pStartingAt as Integer, \
-        in pLanguage as String, in pWrapFlag as Boolean, in pDocTag as Number, out rWordCount as Number) returns String
+  public handler NSSpellCheckerCheckSpellingOfStringWithOptions(in pString as String, in pStartingAt as optional Number, \
+        in pLanguage as optional String, in pWrapFlag as Boolean, in pDocTag as optional Number, out rWordCount as Number) returns String
     variable tRange as optional NSRange
     variable tRangeList as optional List
     variable tLanguage as optional ObjcObject
 
     // LC is 1-based. Obj-C is 0-based
+    if pStartingAt is nothing then
+      put 1 into pStartingAt
+    end if
     subtract 1 from pStartingAt
-    if pLanguage is empty then
+
+    if pLanguage is nothing or pLanguage is empty then
       put nothing into tLanguage
     else
       put StringToNSString(pLanguage) into tLanguage
+    end if
+
+    if pDocTag is nothing then
+      put 0 into pDocTag
     end if
 
     unsafe
@@ -249,10 +440,64 @@ library community.livecode.trevordevore.nsspellchecker
       end if
     end unsafe
 
-    if tRangeList then
+    if tRangeList is not nothing then
       return (element 1 of tRangeList + 1) formatted as string \
             & "," & \
             (element 1 of tRangeList + element 2 of tRangeList) formatted as string
+    else
+      return ""
+    end if
+  end handler
+
+
+   /**
+  Summary:
+
+  Parameters:
+  pString: The string
+  pStartAt: The character to start at.
+
+  Description:
+
+  Returns: Comma-delimited list of two numbers. The first number is the starting char index of the first misspelled word. The second number is the ending char index of the misspelled word.
+  */
+  public handler NSSpellCheckerGuessesForWordRange(in pString as String, in pStartingAt as optional Number, in pEndingAt as optional Number, \
+        in pLanguage as String, in pDocTag as optional Number) returns String
+    variable tRange as NSRange
+    variable tLanguage as optional ObjcObject
+    variable tGuessesNSArray as ObjcId
+    variable tGuessesList as List
+    variable tGuesses as String
+
+    if pStartingAt is nothing then
+      put 1 into pStartingAt
+    end if
+    subtract 1 from pStartingAt
+
+    if pEndingAt is nothing then
+      put the number of chars in pString into pEndingAt
+    end if
+    subtract 1 from pEndingAt
+
+    put [pStartingAt, pEndingAt] into tRange
+
+    if pLanguage is nothing or pLanguage is "" then
+      put nothing into tLanguage
+    else
+      put StringToNSString(pLanguage) into tLanguage
+    end if
+
+    if pDocTag is nothing then
+      put 0 into pDocTag
+    end if
+
+    unsafe
+      put ObjC_NSSpellCheckerGuessesForWordRange(_sharedObject(), tRange, StringToNSString(pString), \
+            tLanguage, pDocTag) into tGuessesNSArray
+    end unsafe
+
+    if tGuessesNSArray is not nothing then
+      return _listAsString(ListFromNSArray(tGuessesNSArray), "\n")
     else
       return ""
     end if
