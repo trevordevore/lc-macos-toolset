@@ -1,4 +1,4 @@
-library com.livecode.extensions.devore.nsrunningapplication
+library com.livecode.extensions.trevordevore.nsrunningapplication
 
   use com.livecode.foreign
   use com.livecode.objc
@@ -23,7 +23,7 @@ library com.livecode.extensions.devore.nsrunningapplication
         binds to "objc:NSRunningApplication.+runningApplicationsWithBundleIdentifier:"
 
   private foreign handler ObjC_NSRunningApplicationActivateWithOptions(in pObj as ObjcId, in pOptions as CInt) \
-        returns Boolean \
+        returns CBool \
         binds to "objc:NSRunningApplication.-activateWithOptions:"
 
 
