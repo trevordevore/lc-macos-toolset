@@ -12,15 +12,11 @@ library community.livecode.trevordevore.nsuserdefaults
         binds to "objc:NSObject.-className"
 
   __safe foreign handler NSNumberGetDoubleValue(in pObj as ObjcId) returns CDouble binds to "objc:NSNumber.doubleValue"
-  -- private foreign handler ObjC_NSObjectIsKindOfClass (in pObj as ObjcId) \
-  --       returns Boolean \
-  --       binds to "objc:NSObject.-isKindOfClass:"
-  -- private foreign handler ObjC_NSObjectGetClass (in pObj as ObjcId) \
-  --       returns ObjcId \
-  --       binds to "objc:NSObject.-class"
-  -- private foreign handler ObjC_NSStringFromClass (in pObj as optional ObjcId) \
-  --       returns ObjcRetainedId \
-  --       binds to "objc:Foundation.framework>NSStringFromClass"
+
+  private foreign handler ObjC_NSObjectGetClass (in pObj as ObjcId) \
+        returns Pointer binds to "objc:NSObject.-class"
+  private foreign handler ObjC_NSStringFromClass (in pClass as Pointer) \
+        returns ObjcId binds to "NSStringFromClass"
 
 
   private foreign handler ObjC_NSUserDefaultsAlloc() \
@@ -192,11 +188,14 @@ library community.livecode.trevordevore.nsuserdefaults
     unsafe
       put ObjC_NSUserDefaultsObjectForKey(_defaultsObject(), StringToNSString(pDefault)) into tObject
       if tObject is not nothing then
-        variable tClassString as ObjcObject
+        variable tObjcClass as Pointer
+        variable tObjCString as ObjcObject
         variable tClassName as String
 
-        put ObjC_NSObjectGetClassName(tObject) into tClassString
-        put StringFromNSString(tClassString) into tClassName
+
+        put ObjC_NSObjectGetClass(tObject) into tObjcClass
+        put ObjC_NSStringFromClass(tObjcClass) into tObjCString
+        put StringFromNSString(tObjCString) into tClassName
 
         if tClassName is "__NSCFData" then
           return DataFromNSData(tObject)
@@ -210,6 +209,7 @@ library community.livecode.trevordevore.nsuserdefaults
           return NumberFromNSNumber(tObject)
         else
           -- __NSCFConstantString
+          -- __NSCFString
           return StringFromNSString(tObject)
         end if
       end if
