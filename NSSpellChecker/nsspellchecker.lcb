@@ -9,6 +9,8 @@ library community.livecode.trevordevore.nsspellchecker
 
   public foreign type NSRange binds to "MCAggregateTypeInfo:pp"
 
+  private foreign handler CompareRange(inout pLeft as NSRange, inout pRight as NSRange, in pSize as UIntSize) returns CInt binds to "memcmp"
+
   private foreign handler ObjC_NSSpellCheckerSharedSpellChecker() \
         returns ObjcId binds to "objc:NSSpellChecker.+sharedSpellChecker"
   private foreign handler ObjC_NSSpellCheckerSharedSpellCheckerExists() \
@@ -54,6 +56,47 @@ library community.livecode.trevordevore.nsspellchecker
         returns NSRange binds to "objc:NSSpellChecker.-checkSpellingOfString:startingAt:language:wrap:inSpellDocumentWithTag:wordCount:"
   private foreign handler ObjC_NSSpellCheckerGuessesForWordRange (in pObj as ObjcId, in pNSRange as NSRange, in stringToCheck as ObjcId, in pLanguage as optional ObjcId, in docTag as CUInt) \
         returns ObjcId binds to "objc:NSSpellChecker.-guessesForWordRange:inString:language:inSpellDocumentWithTag:"
+
+
+  private variable mNotFoundRange as NSRange
+
+
+  /**
+  Summary: Workaround for bug https://quality.livecode.com/show_bug.cgi?id=21331
+
+  Description:
+  LCB cannot handle a NSIntegerMax on 64-bit systems. Using this workaround LCB
+  never attempts to use an NSRange variable with NSIntegerMax set. That is, of course,
+  unless you attempt to spell check a string that is really, really, really, really, really
+  long. A risk we are willing to take.
+  */
+  private handler NoErrorFound(in pRange as optional NSRange) returns Boolean
+    variable tSize as Number
+    variable tResult as Number
+
+    if the architecture ends with "64" then
+      put 8 into tSize
+    else
+      put 4 into tSize
+    end if
+
+    unsafe
+      put CompareRange(mNotFoundRange, pRange, tSize) into tResult
+    end unsafe
+
+    return tResult is 0
+  end handler
+
+
+  public handler NSSpellCheckerInitialize() returns nothing
+    variable tWordCount as Number
+
+    // Get a known "no error" NSRange to work around bug https://quality.livecode.com/show_bug.cgi?id=21331
+    unsafe
+      put ObjC_NSSpellCheckerCheckSpellingOfStringWithOptions(_sharedObject(), StringToNSString("the"), 0, StringToNSString("en"), false, 0, tWordCount) \
+            into mNotFoundRange
+    end unsafe
+  end handler
 
 
   /**
@@ -380,12 +423,11 @@ library community.livecode.trevordevore.nsspellchecker
 
     unsafe
       put ObjC_NSSpellCheckerCheckSpellingOfString(_sharedObject(), StringToNSString(pString), pStartingAt) into tRange
-      // Currently this generates an error if ObjC_NSSpellCheckerCheckSpellingOfString() didn't find
-      // any misspellings and range is empty.
-      if tRange is not nothing then
-        put tRange into tRangeList
-      end if
     end unsafe
+
+    if not NoErrorFound(tRange) then
+      put tRange into tRangeList
+    end if
 
     if tRangeList is not nothing then
       return (element 1 of tRangeList + 1) formatted as string \
@@ -433,12 +475,11 @@ library community.livecode.trevordevore.nsspellchecker
     unsafe
       put ObjC_NSSpellCheckerCheckSpellingOfStringWithOptions(_sharedObject(), StringToNSString(pString), \
             pStartingAt, tLanguage, pWrapFlag, pDocTag, rWordCount) into tRange
-      // Currently this generates an error if ObjC_NSSpellCheckerCheckSpellingOfString() didn't find
-      // any misspellings and range is empty.
-      if tRange is not nothing then
-        put tRange into tRangeList
-      end if
     end unsafe
+
+    if not NoErrorFound(tRange) then
+      put tRange into tRangeList
+    end if
 
     if tRangeList is not nothing then
       return (element 1 of tRangeList + 1) formatted as string \
