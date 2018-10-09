@@ -6,9 +6,9 @@ module community.livecode.trevordevore.nserror
   metadata author is "Trevor DeVore"
   metadata version is "0.1.0"
 
-  private foreign handler ObjC_NSErrorLocalizedFailureReason(in pObj as ObjcId) returns ObjcId binds to "objc:NSError.-localizedFailureReason"
-  private foreign handler ObjC_NSErrorLocalizedDescription(in pObj as ObjcId) returns ObjcId binds to "objc:NSError.-localizedDescription"
-  private foreign handler ObjC_NSErrorLocalizedRecoverySuggestion(in pObj as ObjcId) returns ObjcId binds to "objc:NSError.-localizedRecoverySuggestion"
+  private foreign handler ObjC_NSErrorLocalizedFailureReason(in pObj as ObjcRetainedId) returns ObjcId binds to "objc:NSError.-localizedFailureReason"
+  private foreign handler ObjC_NSErrorLocalizedDescription(in pObj as ObjcRetainedId) returns ObjcId binds to "objc:NSError.-localizedDescription"
+  private foreign handler ObjC_NSErrorLocalizedRecoverySuggestion(in pObj as ObjcRetainedId) returns ObjcId binds to "objc:NSError.-localizedRecoverySuggestion"
 
   public handler NSErrorLocalizedFailureReason(in pErrorObj as ObjcObject) returns String
     variable tErrorString as optional ObjcObject
