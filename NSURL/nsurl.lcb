@@ -10,10 +10,10 @@ library com.livecode.extensions.devore.nsurl
   metadata version is "0.1.0"
 
   private foreign handler ObjC_NSURLAlloc() returns ObjcRetainedId binds to "objc:NSURL.+alloc"
-  private foreign handler ObjC_NSURLInitFileURLWithPath(in pObj as ObjcId, in pFilename as ObjcId) returns ObjcId binds to "objc:NSURL.-initFileURLWithPath:"
+  private foreign handler ObjC_NSURLInitFileURLWithPath(in pObj as ObjcRetainedId, in pFilename as ObjcId) returns ObjcId binds to "objc:NSURL.-initFileURLWithPath:"
   private foreign handler ObjC_NSURLInitFileURLWithPathWithOptions(in pFilename as ObjcId, pIsDirectory as CBool) returns ObjcId binds to "objc:NSURL.-initFfileURLWithPath:isDirectory:"
   private foreign handler ObjC_NSURLBookMarkDataWithOptions(in pNSURL as ObjcId, in pOptions as CULong, in pValuesForKeys as optional ObjcId, in pRelativeUrl as optional ObjcId, out pError as ObjcRetainedId) returns ObjcId binds to "objc:NSURL.-bookmarkDataWithOptions:includingResourceValuesForKeys:relativeToURL:error:"
-  private foreign handler ObjC_NSURLInitByResolvingBookmarkData(in pNSURL as ObjcId, in pBookmarkData as ObjcId, in pOptions as CULong, in pRelativeURL as optional ObjcId, out pBookmarkDataIsStale as CBool, out pError as ObjcRetainedId) returns ObjcId binds to "objc:NSURL.-initByResolvingBookmarkData:options:relativeToURL:bookmarkDataIsStale:error:"
+  private foreign handler ObjC_NSURLInitByResolvingBookmarkData(in pNSURL as ObjcRetainedId, in pBookmarkData as ObjcId, in pOptions as CULong, in pRelativeURL as optional ObjcId, out pBookmarkDataIsStale as CBool, out pError as ObjcRetainedId) returns ObjcId binds to "objc:NSURL.-initByResolvingBookmarkData:options:relativeToURL:bookmarkDataIsStale:error:"
   private foreign handler ObjC_NSURLAbsoluteString(in pNSURL as ObjcId) returns ObjcId binds to "objc:NSURL.-absoluteString"
   private foreign handler ObjC_NSURLStartAccessingSecurityScopedResource(in pNSURL as ObjcId) returns CBool binds to "objc:NSURL.-startAccessingSecurityScopedResource"
   private foreign handler ObjC_NSURLStopAccessingSecurityScopedResource(in pNSURL as ObjcId) returns nothing binds to "objc:NSURL.stopAccessingSecurityScopedResource"
