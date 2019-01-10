@@ -1,0 +1,45 @@
+library community.livecode.trevordevore.webkit
+
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "WebKit"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.0.1"
+
+  public foreign type NSRect binds to "MCAggregateTypeInfo:qqqq"
+
+  private foreign handler ObjC_NSURLAlloc() \
+        returns ObjcRetainedId \
+        binds to "objc:NSURL.+alloc"
+  private foreign handler ObjC_NSURLInitFileURLWithPath(in pObj as ObjcRetainedId, in pFilename as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSURL.-initFileURLWithPath:"
+
+  private foreign handler ObjC_WebViewAlloc () \
+        returns ObjcRetainedId \
+        binds to "objc:WebView.+alloc"
+  private foreign handler ObjC_WebViewInitWithFrame (in pWebView as ObjcId, in pRect as NSRect) \
+        returns ObjcId \
+        binds to "objc:WebView.-initWithFrame:"
+
+
+  public handler CreateWebArchiveFromFile(in pFilename as String) returns nothing
+    variable tPath as ObjcObject
+    variable tWebView as optional ObjcObject
+    variable tNSRect as NSRect
+    variable tWebArchive as optional ObjcObject
+
+    unsafe
+      put ObjC_NSURLAlloc() into tPath
+      put ObjC_NSURLInitFileURLWithPath(tPath, StringToNSString(pFilename)) into tPath
+    end unsafe
+
+    unsafe
+      put ObjC_WebViewAlloc() into tWebView
+      put ObjC_WebViewInitWithFrame(tWebView, tNSRect) into tWebView
+      -- log tWebArchive
+    end unsafe
+  end handler
+
+end library
