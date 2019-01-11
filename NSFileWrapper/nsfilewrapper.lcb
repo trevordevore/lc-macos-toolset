@@ -1,0 +1,72 @@
+library community.livecode.trevordevore.nsfilewrapper
+
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "NSFileWrapper"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.0.1"
+
+  private foreign handler ObjC_NSURLAlloc() \
+        returns ObjcRetainedId \
+        binds to "objc:NSURL.+alloc"
+  private foreign handler ObjC_NSURLInitFileURLWithPath(in pObj as ObjcRetainedId, in pFilename as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSURL.-initFileURLWithPath:"
+
+  private foreign handler ObjC_NSFileWrapperAlloc() \
+        returns ObjcRetainedId \
+        binds to "objc:NSFileWrapper.+alloc"
+  private foreign handler ObjC_NSFileWrapperInitWithURL(in pObj as ObjcRetainedId, in pNSURL as ObjcId, in pOptions as CInt, out rError as optional ObjcRetainedId) \
+        returns ObjcId \
+        binds to "objc:NSFileWrapper.-initWithURL:options:error:"
+  private foreign handler ObjC_NSFileWrapperSerializedRepresentation (in pFileWrapper as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSFileWrapper.-serializedRepresentation"
+
+  /**
+  Summary: Returns the serialized represenatation of a file.
+
+  Parameters:
+  pFilename: Path to a file.
+
+  Description:
+  The data that is returned can be assigned to the clipboard.
+
+  Example:
+  put GetSerializedRepresentationFromFile("/path/to/my_rtf_file.rtfd") into tSerializedData
+  lock clipboard
+  set the rawClipboardData to empty
+  set the rawClipboardData["com.apple.flat-rtfd"] to tSerializedData
+  unlock clipboard
+
+  Returns: Data
+  */
+  public handler GetSerializedRepresentationFromFile(in pFilename as String) returns optional Data
+    variable tPath as optional ObjcObject
+    variable tFileWrapper as optional ObjcObject
+    variable tData as ObjcObject
+    variable tNSFileWrapperReadingImmediate as Number
+    variable tNSError as optional ObjcObject
+
+    unsafe
+      put ObjC_NSURLAlloc() into tPath
+      put ObjC_NSURLInitFileURLWithPath(tPath, StringToNSString(pFilename)) into tPath
+
+      if tPath is not nothing then
+        // https://developer.apple.com/documentation/foundation/nsfilewrapperreadingoptions/nsfilewrapperreadingimmediate?language=objc
+        put 1 shifted left by 0 bitwise into tNSFileWrapperReadingImmediate
+
+        put ObjC_NSFileWrapperAlloc() into tFileWrapper
+        put ObjC_NSFileWrapperInitWithURL(tFileWrapper, tPath, tNSFileWrapperReadingImmediate, tNSError) into tFileWrapper
+        if tFileWrapper is not nothing then
+          put ObjC_NSFileWrapperSerializedRepresentation(tFileWrapper) into tData
+          return DataFromNSData(tData)
+        end if
+      end if
+    end unsafe
+
+    return nothing
+  end handler
+
+end library
