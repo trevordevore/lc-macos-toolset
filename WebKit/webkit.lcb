@@ -2,6 +2,7 @@ library community.livecode.trevordevore.webkit
 
   use com.livecode.foreign
   use com.livecode.objc
+  use com.livecode.engine
 
   metadata title is "WebKit"
   metadata author is "Trevor DeVore"
@@ -9,12 +10,29 @@ library community.livecode.trevordevore.webkit
 
   public foreign type NSRect binds to "MCAggregateTypeInfo:qqqq"
 
+  private foreign handler ObjC_NSErrorLocalizedFailureReason(in pObj as ObjcId) \
+        returns ObjcId binds to "objc:NSError.-localizedFailureReason"
+  private foreign handler ObjC_NSErrorLocalizedDescription(in pObj as ObjcId) \
+        returns ObjcId binds to "objc:NSError.-localizedDescription"
+
+  private foreign handler ObjC_NSDateDateWithTimeIntervalsSinceNow(in pSeconds as CDouble) \
+        returns ObjcId binds to "objc:NSDate.+dateWithTimeIntervalSinceNow:"
+
+  private foreign handler ObjC_NSRunLoopCurrentRunLoop() \
+        returns ObjcId binds to "objc:NSRunLoop.+currentRunLoop"
+  private foreign handler ObjC_NSRunLoopRun(in pRunLoop as ObjcId, in pRunMode as ObjcId, in pNSDateLimitDate as ObjcId) \
+        returns CBool binds to "objc:NSRunLoop.-runMode:beforeDate:"
+
   private foreign handler ObjC_NSURLAlloc() \
         returns ObjcRetainedId \
         binds to "objc:NSURL.+alloc"
   private foreign handler ObjC_NSURLInitFileURLWithPath(in pObj as ObjcRetainedId, in pFilename as ObjcId) \
         returns ObjcId \
         binds to "objc:NSURL.-initFileURLWithPath:"
+
+  private foreign handler ObjC_NSURLRequestWithURL(in pNSURL as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSURLRequest.+requestWithURL:"
 
   private foreign handler ObjC_WebViewAlloc () \
         returns ObjcRetainedId \
@@ -24,47 +42,84 @@ library community.livecode.trevordevore.webkit
         binds to "objc:WebView.-initWithFrame:"
   private foreign handler ObjC_WebViewMainFrame (in pWebView as ObjcId) \
         returns ObjcId binds to "objc:WebView.-mainFrame"
-  private foreign handler ObjC_WebViewStopLoading (in pWebView as ObjcId) \
-        returns nothing binds to "objc:WebView.-stopLoading"
+  private foreign handler ObjC_WebViewStopLoading (in pWebView as ObjcId, in pSender as optional ObjcId) \
+        returns nothing binds to "objc:WebView.-stopLoading:"
   private foreign handler ObjC_WebViewSetFrameLoadDelegate (in pWebView as ObjcId, in pDelegate as ObjcId) \
         returns ObjcId binds to "objc:WebView.-setFrameLoadDelegate:"
 
+  private foreign handler ObjC_WebFrameLoadRequest (in pWebFrame as ObjcId, in pNSURLRequest as ObjcId) \
+        returns ObjcId binds to "objc:WebFrame.-loadRequest:"
+  private foreign handler ObjC_WebFrameDOMDocument (in pWebFrame as ObjcId) \
+        returns optional ObjcId binds to "objc:WebFrame.-DOMDocument"
+  private foreign handler ObjC_WebFrameWebFrameView (in pWebFrame as ObjcId) \
+        returns ObjcId binds to "objc:WebFrame.-frameView"
+  private foreign handler ObjC_WebFrameViewDocumentView (in pWebFrameView as ObjcId) \
+        returns ObjcId binds to "objc:WebFrameView.-documentView"
+  private foreign handler ObjC_WebFrameDocumentView (in pWebDocumentView as ObjcId) \
+        returns ObjcId binds to "objc:WebDocumentView.-string"
+  private foreign handler ObjC_DOMDocumentWebArchive (in pDOMDocument as ObjcId) \
+        returns ObjcId binds to "objc:DOMDocument.-webArchive"
+
+  private foreign handler ObjC_WebArchiveData (in pWebArchive as ObjcId) \
+        returns ObjcId binds to "objc:WebArchive.-data"
+
+
 
   /* Foreign handlers and handlers for delegates */
-  variable mWebViewDelegate as optional ObjcObject
-  variable mFinishLoading as Boolean
+  variable mWebFrameLoadDelegate as optional ObjcObject
+  variable mFinishedLoading as Boolean
   variable mLoadFailed as Boolean
 
   foreign handler Delegate_WebViewDidFinishLoadForFrame (in pDelegate as ObjcId, in pWebView as ObjcId, in pWebFrame as ObjcId) \
         returns nothing \
-        binds to "objc:WebView.-webview:didFinishLoadingAppcast:"
+        binds to "objc:WebKit>.-webView:didFinishLoadForFrame:"
 
   private handler webKitDidFinishLoadForFrame(in pWebView as ObjcObject, in pWebFrame as ObjcObject) returns nothing
     unsafe
-      if pWebFrame = ObjC_WebViewMainFrame(pWebView) then
-        put true into mFinishLoading
-      end if
+      -- if pWebFrame = ObjC_WebViewMainFrame(pWebView) then
+        put true into mFinishedLoading
+      -- end if
     end unsafe
   end handler
 
 
   foreign handler Delegate_WebViewDidFailProvisionalLoadWithError (in pDelegate as ObjcId, in pWebView as ObjcId, in pNSError as ObjcRetainedId, in pWebFrame as ObjcId) \
         returns nothing \
-        binds to "objc:WebView.-webview:didFailProvisionalLoadWithError:forFrame:"
+        binds to "objc:WebKit>.-webView:didFailProvisionalLoadWithError:forFrame:"
 
   private handler webKitDidFailProvisionalLoadWithError(in pWebView as ObjcObject, in pNSError as ObjcObject, in pWebFrame as ObjcObject) returns nothing
     put true into mLoadFailed
-    put true into mFinishLoading
+    put true into mFinishedLoading
+
+    if pNSError is not nothing then
+      variable tNSString as optional ObjcObject
+      unsafe
+        put ObjC_NSErrorLocalizedDescription(pNSError) into tNSString
+        if tNSString is not nothing then
+          log StringFromNSString(tNSString)
+        end if
+      end unsafe
+    end if
   end handler
 
 
   foreign handler Delegate_WebViewDidFailLoadWithError (in pDelegate as ObjcId, in pWebView as ObjcId, in pNSError as ObjcRetainedId, in pWebFrame as ObjcId) \
         returns nothing \
-        binds to "objc:WebView.-webview:didFailLoadWithError:forFrame:"
+        binds to "objc:WebKit>.-webView:didFailLoadWithError:forFrame:"
 
   private handler webKitDidFailLoadWithError(in pWebView as ObjcObject, in pNSError as ObjcObject, in pWebFrame as ObjcObject) returns nothing
     put true into mLoadFailed
-    put true into mFinishLoading
+    put true into mFinishedLoading
+
+    if pNSError is not nothing then
+      variable tNSString as optional ObjcObject
+      unsafe
+        put ObjC_NSErrorLocalizedDescription(pNSError) into tNSString
+        if tNSString is not nothing then
+          log StringFromNSString(tNSString)
+        end if
+      end unsafe
+    end if
   end handler
   /* End delegate handlers */
 
@@ -78,28 +133,55 @@ library community.livecode.trevordevore.webkit
           Delegate_WebViewDidFailProvisionalLoadWithError, \
           Delegate_WebViewDidFailLoadWithError] into tForeignHandlers
 
-    put {"webview:didFinishLoadForFrame:": webKitDidFinishLoadForFrame, \
-          "webview:didFailProvisionalLoadWithError:forFrame:": webKitDidFailProvisionalLoadWithError, \
-          "webview:didFailLoadWithError:forFrame:": webKitDidFailLoadWithError} into tMapping
+    put {"webView:didFinishLoadForFrame:": webKitDidFinishLoadForFrame, \
+          "webView:didFailProvisionalLoadWithError:forFrame:": webKitDidFailProvisionalLoadWithError, \
+          "webView:didFailLoadWithError:forFrame:": webKitDidFailLoadWithError} into tMapping
 
     put CreateObjcInformalDelegate( \
               tForeignHandlers, \
               tMapping) into tDelegate
 
     if tDelegate is not nothing then
-      put tDelegate into mWebViewDelegate
-      ObjC_WebViewSetFrameLoadDelegate(pWebView, mWebViewDelegate)
+      put tDelegate into mWebFrameLoadDelegate
+      ObjC_WebViewSetFrameLoadDelegate(pWebView, mWebFrameLoadDelegate)
     end if
   end handler
 
 
-  public handler CreateWebArchiveFromFile(in pFilename as String) returns nothing
-    variable tPath as ObjcObject
+  /**
+  Summary: Converts the HTML in pFilename to a web archive and returns the data.
+
+  Parameters:
+  pFilename: Path to an HTML file.
+
+  Description:
+  The data that is returned can be assigned to the clipboard.
+
+  Example:
+  put GetWebArchiveDataFromFile("/path/to/my_html.html") into tArchive
+  lock clipboard
+  set the rawClipboardData to empty
+  set the rawClipboardData["com.apple.webarchive"] to tArchive
+  unlock clipboard
+
+  Returns: Data
+  */
+  public handler GetWebArchiveDataFromFile(in pFilename as String) returns optional Data
+    variable tPath as optional ObjcObject
+    variable tNSURLRequest as optional ObjcObject
     variable tWebView as optional ObjcObject
     variable tNSRect as NSRect
     variable tWebArchive as optional ObjcObject
+    variable tMainWebFrame as ObjcObject
+    variable tDOMDocument as optional ObjcObject
+    variable tData as ObjcObject
 
-    put false into mFinishLoading
+    variable tResolution as Number
+    variable tNext as ObjcObject
+    variable isRunning as Boolean
+    variable tText as String
+
+    put false into mFinishedLoading
     put false into mLoadFailed
 
     put [0, 0, 200, 200] into tNSRect
@@ -109,6 +191,10 @@ library community.livecode.trevordevore.webkit
       put ObjC_NSURLInitFileURLWithPath(tPath, StringToNSString(pFilename)) into tPath
     end unsafe
 
+    if tPath is nothing then
+      return nothing
+    end if
+
     unsafe
       put ObjC_WebViewAlloc() into tWebView
       put ObjC_WebViewInitWithFrame(tWebView, tNSRect) into tWebView
@@ -116,8 +202,43 @@ library community.livecode.trevordevore.webkit
     end unsafe
 
     unsafe
-      ObjC_WebViewStopLoading(tWebView)
+      put ObjC_WebViewMainFrame(tWebView) into tMainWebFrame
+      put ObjC_NSURLRequestWithURL(tPath) into tNSURLRequest
+      ObjC_WebFrameLoadRequest(tMainWebFrame, tNSURLRequest)
+
+      put 1 into tResolution
+
+      // Loop until the page has finished loading
+      repeat forever
+        put ObjC_NSDateDateWithTimeIntervalsSinceNow(tResolution) into tNext
+        put ObjC_NSRunLoopRun(ObjC_NSRunLoopCurrentRunLoop(), StringToNSString("NSDefaultRunLoopMode"), tNext) into isRunning
+
+        if isRunning and not mFinishedLoading then
+          next repeat
+        else
+          exit repeat
+        end if
+      end repeat
+
+      ObjC_WebViewStopLoading(tWebView, nothing)
     end unsafe
+
+    put nothing into mWebFrameLoadDelegate
+
+    if mLoadFailed then
+      return nothing
+    end if
+
+    unsafe
+      put ObjC_WebFrameDOMDocument(tMainWebFrame) into tDOMDocument
+      if tDOMDocument is not nothing then
+        put ObjC_DOMDocumentWebArchive(tDOMDocument) into tWebArchive
+        put ObjC_WebArchiveData(tWebArchive) into tData
+        return DataFromNSData(tData)
+      end if
+    end unsafe
+
+    return nothing
   end handler
 
 end library
