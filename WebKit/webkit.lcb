@@ -4,6 +4,10 @@ library community.livecode.trevordevore.webkit
   use com.livecode.objc
   use com.livecode.engine
 
+  /*
+  Based off of code from webarchiver: https://github.com/newzealandpaul/webarchiver
+  */
+
   metadata title is "WebKit"
   metadata author is "Trevor DeVore"
   metadata version is "0.0.1"
