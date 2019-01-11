@@ -22,6 +22,75 @@ library community.livecode.trevordevore.webkit
   private foreign handler ObjC_WebViewInitWithFrame (in pWebView as ObjcId, in pRect as NSRect) \
         returns ObjcId \
         binds to "objc:WebView.-initWithFrame:"
+  private foreign handler ObjC_WebViewMainFrame (in pWebView as ObjcId) \
+        returns ObjcId binds to "objc:WebView.-mainFrame"
+  private foreign handler ObjC_WebViewStopLoading (in pWebView as ObjcId) \
+        returns nothing binds to "objc:WebView.-stopLoading"
+  private foreign handler ObjC_WebViewSetFrameLoadDelegate (in pWebView as ObjcId, in pDelegate as ObjcId) \
+        returns ObjcId binds to "objc:WebView.-setFrameLoadDelegate:"
+
+
+  /* Foreign handlers and handlers for delegates */
+  variable mWebViewDelegate as optional ObjcObject
+  variable mFinishLoading as Boolean
+  variable mLoadFailed as Boolean
+
+  foreign handler Delegate_WebViewDidFinishLoadForFrame (in pDelegate as ObjcId, in pWebView as ObjcId, in pWebFrame as ObjcId) \
+        returns nothing \
+        binds to "objc:WebView.-webview:didFinishLoadingAppcast:"
+
+  private handler webKitDidFinishLoadForFrame(in pWebView as ObjcObject, in pWebFrame as ObjcObject) returns nothing
+    unsafe
+      if pWebFrame = ObjC_WebViewMainFrame(pWebView) then
+        put true into mFinishLoading
+      end if
+    end unsafe
+  end handler
+
+
+  foreign handler Delegate_WebViewDidFailProvisionalLoadWithError (in pDelegate as ObjcId, in pWebView as ObjcId, in pNSError as ObjcRetainedId, in pWebFrame as ObjcId) \
+        returns nothing \
+        binds to "objc:WebView.-webview:didFailProvisionalLoadWithError:forFrame:"
+
+  private handler webKitDidFailProvisionalLoadWithError(in pWebView as ObjcObject, in pNSError as ObjcObject, in pWebFrame as ObjcObject) returns nothing
+    put true into mLoadFailed
+    put true into mFinishLoading
+  end handler
+
+
+  foreign handler Delegate_WebViewDidFailLoadWithError (in pDelegate as ObjcId, in pWebView as ObjcId, in pNSError as ObjcRetainedId, in pWebFrame as ObjcId) \
+        returns nothing \
+        binds to "objc:WebView.-webview:didFailLoadWithError:forFrame:"
+
+  private handler webKitDidFailLoadWithError(in pWebView as ObjcObject, in pNSError as ObjcObject, in pWebFrame as ObjcObject) returns nothing
+    put true into mLoadFailed
+    put true into mFinishLoading
+  end handler
+  /* End delegate handlers */
+
+
+  unsafe handler SetWebViewDelegate(in pWebView as ObjcObject) returns nothing
+    variable tDelegate as optional ObjcObject
+    variable tForeignHandlers as List
+    variable tMapping as Array
+
+    put [Delegate_WebViewDidFinishLoadForFrame, \
+          Delegate_WebViewDidFailProvisionalLoadWithError, \
+          Delegate_WebViewDidFailLoadWithError] into tForeignHandlers
+
+    put {"webview:didFinishLoadForFrame:": webKitDidFinishLoadForFrame, \
+          "webview:didFailProvisionalLoadWithError:forFrame:": webKitDidFailProvisionalLoadWithError, \
+          "webview:didFailLoadWithError:forFrame:": webKitDidFailLoadWithError} into tMapping
+
+    put CreateObjcInformalDelegate( \
+              tForeignHandlers, \
+              tMapping) into tDelegate
+
+    if tDelegate is not nothing then
+      put tDelegate into mWebViewDelegate
+      ObjC_WebViewSetFrameLoadDelegate(pWebView, mWebViewDelegate)
+    end if
+  end handler
 
 
   public handler CreateWebArchiveFromFile(in pFilename as String) returns nothing
@@ -29,6 +98,11 @@ library community.livecode.trevordevore.webkit
     variable tWebView as optional ObjcObject
     variable tNSRect as NSRect
     variable tWebArchive as optional ObjcObject
+
+    put false into mFinishLoading
+    put false into mLoadFailed
+
+    put [0, 0, 200, 200] into tNSRect
 
     unsafe
       put ObjC_NSURLAlloc() into tPath
@@ -38,7 +112,11 @@ library community.livecode.trevordevore.webkit
     unsafe
       put ObjC_WebViewAlloc() into tWebView
       put ObjC_WebViewInitWithFrame(tWebView, tNSRect) into tWebView
-      -- log tWebArchive
+      SetWebViewDelegate(tWebView)
+    end unsafe
+
+    unsafe
+      ObjC_WebViewStopLoading(tWebView)
     end unsafe
   end handler
 
