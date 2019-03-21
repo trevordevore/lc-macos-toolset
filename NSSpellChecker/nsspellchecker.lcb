@@ -419,7 +419,7 @@ library community.livecode.trevordevore.nsspellchecker
     if pStartingAt is nothing then
       put 1 into pStartingAt
     end if
-    subtract 1 from pStartingAt
+    put the maximum value of [0, pStartingAt-1] into pStartingAt
 
     unsafe
       put ObjC_NSSpellCheckerCheckSpellingOfString(_sharedObject(), StringToNSString(pString), pStartingAt) into tRange
@@ -460,7 +460,7 @@ library community.livecode.trevordevore.nsspellchecker
     if pStartingAt is nothing then
       put 1 into pStartingAt
     end if
-    subtract 1 from pStartingAt
+    put the maximum value of [0, pStartingAt-1] into pStartingAt
 
     if pLanguage is nothing or pLanguage is empty then
       put nothing into tLanguage
@@ -513,12 +513,12 @@ library community.livecode.trevordevore.nsspellchecker
     if pStartingAt is nothing then
       put 1 into pStartingAt
     end if
-    subtract 1 from pStartingAt
+    put the maximum value of [0, pStartingAt-1] into pStartingAt
 
     if pEndingAt is nothing then
       put the number of chars in pString into pEndingAt
     end if
-    subtract 1 from pEndingAt
+    put the maximum value of [1, pEndingAt-1] into pEndingAt
 
     put [pStartingAt, pEndingAt] into tRange
 
