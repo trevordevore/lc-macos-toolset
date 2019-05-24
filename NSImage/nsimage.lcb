@@ -8,4 +8,4 @@ module community.livecode.trevordevore.nsimage
   metadata version is "0.1.0"
 
 
-end library
+end module
