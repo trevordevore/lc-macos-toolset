@@ -7,9 +7,11 @@ library com.livecode.extensions.devore.keyboard
   metadata author is "Trevor DeVore"
   metadata version is "0.1.0"
 
-  private foreign handler NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
-  private foreign handler NSWorkspaceSelectFile(in pSharedWorkspace as ObjcId, in pFilename as ObjcId, in pRootedAtPath as ObjcId) returns CBool binds to "objc:NSWorkspace.-selectFile:inFileViewerRootedAtPath:"
-  private foreign handler NSWorkspaceLaunchApplication(in pSharedWorkspace as ObjcId, in pAppName as ObjcId) returns CBool binds to "objc:NSWorkspace.launchApplication:"
+
+  private foreign handler TISCopyCurrentKeyboardLayoutInputSource () \
+        returns Pointer binds to "c:Carbon.framework>TISCopyCurrentKeyboardLayoutInputSource"
+  private foreign handler TISGetInputSourceProperty (in inputSource as Pointer, in propertyKey as ObjcId) \
+        returns ObjcId binds to "c:Carbon.framework>TISGetInputSourceProperty"
 
 
   /**
@@ -23,7 +25,17 @@ library com.livecode.extensions.devore.keyboard
 
   Returns: Binary
   */
-  public handler macOSVirtualKeyCodeToUnicodeChar()
+  public handler macOSVirtualKeyCodeToChar(in pKeyCode as Integer)
+    variable currentKeyboard as Pointer
+    variable layoutData as optional ObjcObject
+
+    unsafe
+      put TISCopyCurrentKeyboardLayoutInputSource() into currentKeyboard
+      put TISGetInputSourceProperty(currentKeyboard, StringToNSString("kTISPropertyUnicodeKeyLayoutData")) into layoutData
+    end unsafe
+
+    log layoutData
+
     /*
       NSString *t_return = nil;
       NSString *t_error = nil;
