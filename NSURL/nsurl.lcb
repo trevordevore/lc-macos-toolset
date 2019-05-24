@@ -116,7 +116,7 @@ library com.livecode.extensions.devore.nsurl
     variable tBookmarkDataIsStale as Boolean
     variable tNSData as optional ObjcObject
     variable tNSError as optional ObjcObject
-    variable tFilename as ObjcObject
+    variable tFilename as optional ObjcObject
 
     put DataToNSData(pBookmarkData) into tNSData
     if pRelativeToURL is not empty then
@@ -133,7 +133,7 @@ library com.livecode.extensions.devore.nsurl
         put ObjC_NSURLAlloc() into tNSURL
         put ObjC_NSURLInitByResolvingBookmarkData(tNSURL, tNSData, tBookmarkOptions, tRelativeToURL, tBookmarkDataIsStale, tNSError) into tNSURL
         if tBookmarkDataIsStale then
-          log "stale"
+          log "bookmark data is stale"
         else
           if tNSURL is not nothing then
             put ObjC_NSURLStartAccessingSecurityScopedResource(tNSURL) into tGainedAccess
@@ -149,7 +149,9 @@ library com.livecode.extensions.devore.nsurl
 
     if tNSError is not nothing then
       log NSErrorLocalizedFailureReason(tNSError)
-    else if tFilename is not nothing then
+    end if
+
+    if tFilename is not nothing then
       return StringFromNSString(tFilename)
     else
       return ""
