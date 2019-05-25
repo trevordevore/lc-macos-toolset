@@ -9,6 +9,7 @@ library community.livecode.trevordevore.nsworkspace
 
 	private foreign handler ObjC_NSWorkspaceSharedWorkspace() returns ObjcId binds to "objc:NSWorkspace.+sharedWorkspace"
 	private foreign handler ObjC_NSWorkspaceSelectFile(in pSharedWorkspace as ObjcId, in pFilename as ObjcId, in pRootedAtPath as ObjcId) returns CBool binds to "objc:NSWorkspace.-selectFile:inFileViewerRootedAtPath:"
+  private foreign handler ObjC_NSWorkspaceIsFilePackageAtPath(in pSharedWorkspace as ObjcId, in pFilename as ObjcId) returns CBool binds to "objc:NSWorkspace.-isFilePackageAtPath:"
   private foreign handler ObjC_NSWorkspaceRunningApplications(in pSharedWorkspace as ObjcId) returns ObjcId binds to "objc:NSWorkspace.-runningApplications"
 	private foreign handler ObjC_NSWorkspaceLaunchApplication(in pSharedWorkspace as ObjcId, in pAppName as ObjcId) returns CBool binds to "objc:NSWorkspace.launchApplication:"
 	private foreign handler ObjC_NSWorkspaceFrontmostApplication(in pSharedWorkspace as ObjcId) returns ObjcId binds to "objc:NSWorkspace.-frontmostApplication"
@@ -35,6 +36,27 @@ library community.livecode.trevordevore.nsworkspace
 
 		return wasSuccessful
 	end handler
+
+
+  /**
+  Summary: Determines whether the specified path is a file package.
+
+  Parameters:
+  pFilename: Path.
+
+  Returns: Boolean
+  */
+  public handler NSWorkspaceIsFilePackageAtPath(in pFilename as String) returns Boolean
+    variable sharedWorkspace as ObjcObject
+    variable isPackage as Boolean
+
+    unsafe
+      put ObjC_NSWorkspaceSharedWorkspace() into sharedWorkspace
+      put ObjC_NSWorkspaceIsFilePackageAtPath(sharedWorkspace, StringToNSString(pFilename)) into isPackage
+    end unsafe
+
+    return isPackage
+  end handler
 
 
   /**
