@@ -1,7 +1,8 @@
-library com.livecode.extensions.trevordevore.nsevet
+library com.livecode.extensions.trevordevore.nsevent
 
   use com.livecode.foreign
   use com.livecode.objc
+  use com.livecode.engine
 
   metadata title is "NSEvent"
   metadata author is "Trevor DeVore"
@@ -92,11 +93,19 @@ library com.livecode.extensions.trevordevore.nsevet
   /* END BLOCK HANDLING */
 
   variable mNSEventHandlerTypeBlock as optional BlockPointer
-  public handler type NSEventHandlerType(in pEvent as ObjcId) returns nothing
+  variable mNSEventMonitor as optional ObjcId
+  public foreign type NSPoint binds to "MCAggregateTypeInfo:qq"
 
   private foreign handler ObjC_NSEventAddGlobalMonitorForEventsMatchingMask (in pNSEventMask as CULongLong, in pHandler as BlockPointer) \
         returns ObjcId \
         binds to "objc:NSEvent.+addGlobalMonitorForEventsMatchingMask:handler:"
+  private foreign handler ObjC_NSEventRemoveMonitor (in pEventHandlerObject as ObjcId) \
+        returns nothing \
+        binds to "objc:NSEvent.+removeMonitor:"
+
+  private foreign handler ObjC_NSEventMouseLocation (in pEvent as ObjcId) \
+        returns NSPoint \
+        binds to "objc:NSEvent.+mouseLocation"
 
 
   /**
@@ -107,9 +116,13 @@ library com.livecode.extensions.trevordevore.nsevet
   public handler NSEventInitialize() returns Boolean
     variable tResult as Boolean
 
-    unsafe
-      put CreateBlockPointerFromHandler(NSEventGlobalMonitorCallback, mNSEventHandlerTypeBlock) into tResult
-    end unsafe
+    if mNSEventHandlerTypeBlock is nothing then
+      unsafe
+        put CreateBlockPointerFromHandler(NSEventGlobalMonitorCallback, mNSEventHandlerTypeBlock) into tResult
+      end unsafe
+    else
+      put true into tResult
+    end if
 
     return tResult
   end handler
@@ -136,18 +149,32 @@ library com.livecode.extensions.trevordevore.nsevet
 
   Returns:
   */
-  public handler NSEventAddGlobalMonitorForEventsMatchingMask(in pEventMask as String) returns Boolean
-    variable tNSEvent as optional ObjcObject
+  public handler NSEventAddGlobalMonitorForEventsMatchingMask(in pEventMask as String) returns nothing
     variable tEventMask as Number
     variable tFunctionPtr as Pointer
 
     put _GetEventMask(pEventMask) into tEventMask
 
-    unsafe
-      put ObjC_NSEventAddGlobalMonitorForEventsMatchingMask(tEventMask, mNSEventHandlerTypeBlock) into tNSEvent
-    end unsafe
+    if mNSEventMonitor is nothing then
+      unsafe
+        put ObjC_NSEventAddGlobalMonitorForEventsMatchingMask(tEventMask, mNSEventHandlerTypeBlock) into mNSEventMonitor
+      end unsafe
+    end if
+  end handler
 
-    return true
+
+  /**
+  Summary: Summary
+
+  Returns: nothing
+  */
+  public handler NSEventRemoveGlobalMonitor() returns nothing
+    if mNSEventMonitor is not nothing then
+      unsafe
+        ObjC_NSEventRemoveMonitor(mNSEventMonitor)
+      end unsafe
+      put nothing into mNSEventMonitor
+    end if
   end handler
 
 
@@ -156,8 +183,18 @@ library com.livecode.extensions.trevordevore.nsevet
 
   Returns: nothing
   */
-  private handler NSEventGlobalMonitorCallback(in pBlock as BlockPointer, in pEvent as ObjcId) returns nothing
-    log "I'm called!"
+  public handler NSEventGlobalMonitorCallback(in pBlock as BlockPointer, in pEvent as ObjcId) returns nothing
+    variable tMouseLoc as NSPoint
+
+    // TODO: This code DOES NOT work. Haven't found a way to get properties from NSEvent.
+    //       Tried modifying parameters but no luck. What is going on?
+    unsafe
+      put ObjC_NSEventMouseLocation(pEvent) into tMouseLoc
+    end unsafe
+
+    log tMouseLoc
+
+    -- post "NSEventGlobalMonitorCallback"
   end handler
 
 
