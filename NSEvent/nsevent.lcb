@@ -1,0 +1,239 @@
+library com.livecode.extensions.trevordevore.nsevet
+
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "NSEvent"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.1.0"
+
+  /* BLOCK HANDLING */
+
+  type LibraryHandle is Pointer
+
+  private variable mNSConcreteGlobalBlock as optional Pointer
+
+  constant kRTLD_LAZY    is 1
+  private foreign handler OpenLibrary(in pPath as ZStringUTF8, in pFlag as CSInt) returns optional LibraryHandle binds to "dlopen"
+  private foreign handler GetSymbolPointer(in pHandle as LibraryHandle, in pSymbol as ZStringUTF8) returns optional Pointer binds to "dlsym"
+  private foreign handler CloseLibrary(in pHandle as LibraryHandle) returns CSInt binds to "dlclose"
+
+  private unsafe handler EnsureNSConcreteGlobalBlock() returns nothing
+    if mNSConcreteGlobalBlock is not nothing then
+      return
+    end if
+
+    variable tSystem as LibraryHandle
+    put OpenLibrary("libSystem.dylib", kRTLD_LAZY) into tSystem
+    if tSystem is not nothing then
+      put GetSymbolPointer(tSystem, "_NSConcreteGlobalBlock") into mNSConcreteGlobalBlock
+      CloseLibrary(tSystem)
+    end if
+  end handler
+
+  public foreign type BlockDescriptor binds to "MCAggregateTypeInfo:ffrrr"
+  public foreign type Block binds to "MCAggregateTypeInfo:rEErr"
+  type BlockPointer is Pointer
+
+  foreign handler MCHandlerGetFunctionPtr(in pHandler as any, out rPtr as Pointer) returns CBool binds to "<builtin>"
+
+  private foreign handler CopyBlockDescriptor(inout pBlock as BlockDescriptor, in pSize as UIntSize, out rNewBlock as Pointer) returns CBool binds to "MCMemoryAllocateCopy"
+
+  private foreign handler CopyBlock(inout pBlock as Block, in pSize as UIntSize, out rNewBlock as Pointer) returns CBool binds to "MCMemoryAllocateCopy"
+
+  private foreign handler MCMemoryDelete(in pBlock as Pointer) returns nothing binds to "<builtin>"
+
+  private constant kBlockSize is 32
+  private constant kBlockDescriptorSize is 40
+
+  private handler CreateBlockPointerFromHandler(in pHandler as any, out rBlockPtr as optional BlockPointer) returns Boolean
+    unsafe
+      EnsureNSConcreteGlobalBlock()
+
+      variable tFunctionPtr as Pointer
+      if not MCHandlerGetFunctionPtr(pHandler, tFunctionPtr) then
+        return false
+      end if
+
+      variable tBlock as Block
+      variable tBlockDescriptor as BlockDescriptor
+
+      put [0, kBlockSize, nothing, nothing, nothing] into tBlockDescriptor
+
+      variable tBlockDescriptorPointer as Pointer
+      if not CopyBlockDescriptor(tBlockDescriptor, kBlockDescriptorSize, tBlockDescriptorPointer) then
+        return false
+      end if
+
+      put [mNSConcreteGlobalBlock, 0x30000000, 0, tFunctionPtr, tBlockDescriptorPointer] into tBlock
+
+      variable tBlockPtr as BlockPointer
+      if not CopyBlock(tBlock, kBlockSize, tBlockPtr) then
+        MCMemoryDelete(tBlockDescriptorPointer)
+        return false
+      end if
+
+      put tBlockPtr into rBlockPtr
+      return true
+    end unsafe
+  end handler
+
+  private handler DeleteBlockPointer(in pBlockPointer as BlockPointer)
+    unsafe
+      DeleteBlockDescriptorPointer(pBlockPointer)
+      MCMemoryDelete(pBlockPointer)
+    end unsafe
+  end handler
+
+  private unsafe handler DeleteBlockDescriptorPointer(inout pBlock as Block)
+    MCMemoryDelete(pBlock[5])
+  end handler
+
+  /* END BLOCK HANDLING */
+
+  variable mNSEventHandlerTypeBlock as optional BlockPointer
+  public handler type NSEventHandlerType(in pEvent as ObjcId) returns nothing
+
+  private foreign handler ObjC_NSEventAddGlobalMonitorForEventsMatchingMask (in pNSEventMask as CULongLong, in pHandler as BlockPointer) \
+        returns ObjcId \
+        binds to "objc:NSEvent.+addGlobalMonitorForEventsMatchingMask:handler:"
+
+
+  /**
+  Summary: Create the necessary block pointer
+
+  Returns: nothing
+  */
+  public handler NSEventInitialize() returns Boolean
+    variable tResult as Boolean
+
+    unsafe
+      put CreateBlockPointerFromHandler(NSEventGlobalMonitorCallback, mNSEventHandlerTypeBlock) into tResult
+    end unsafe
+
+    return tResult
+  end handler
+
+
+  public handler NSEventCleanup() returns nothing
+    if mNSEventHandlerTypeBlock is not nothing then
+      unsafe
+        DeleteBlockPointer(mNSEventHandlerTypeBlock)
+      end unsafe
+      put nothing into mNSEventHandlerTypeBlock
+    end if
+  end handler
+
+
+  /**
+  Summary:
+
+  Parameters:
+  pFilename:
+
+  Description:
+
+
+  Returns:
+  */
+  public handler NSEventAddGlobalMonitorForEventsMatchingMask(in pEventMask as String) returns Boolean
+    variable tNSEvent as optional ObjcObject
+    variable tEventMask as Number
+    variable tFunctionPtr as Pointer
+
+    put _GetEventMask(pEventMask) into tEventMask
+
+    unsafe
+      put ObjC_NSEventAddGlobalMonitorForEventsMatchingMask(tEventMask, mNSEventHandlerTypeBlock) into tNSEvent
+    end unsafe
+
+    return true
+  end handler
+
+
+  /**
+  Summary: NSEvent Global Monitor Callback handler.
+
+  Returns: nothing
+  */
+  private handler NSEventGlobalMonitorCallback(in pBlock as BlockPointer, in pEvent as ObjcId) returns nothing
+    log "I'm called!"
+  end handler
+
+
+  /**
+  Summary: Returns the list of available nsevent mask options.
+
+  Description:
+  See the following url for a description of the options:
+  https://developer.apple.com/documentation/appkit/nseventtype?language=objc
+
+  Returns: Comma-delimited list of options.
+  */
+  public handler NSEventTypeOptions() returns String
+    variable tKeys as List
+    variable tOptions as String
+
+    put the keys of _GetEventTypeOptions() into tKeys
+    sort tKeys in ascending text order
+    combine tKeys with "," into tOptions
+    return tOptions
+  end handler
+
+
+  /**
+  Summary: Returns the event mask for an event type.
+
+  Returns: Number
+  */
+  private handler _GetEventMask(in pEventMask as String) returns Number
+    variable tEventTypes as Array
+
+    put _GetEventTypeOptions() into tEventTypes
+
+    return 1 shifted left by tEventTypes[pEventMask] bitwise
+  end handler
+
+
+  /**
+  Description:
+  https://developer.apple.com/documentation/appkit/nseventtype?language=objc
+  */
+  private handler _GetEventTypeOptions() returns Array
+    return {"NSEventTypeLeftMouseDown": 1, \
+            "NSEventTypeLeftMouseUp": 2, \
+            "NSEventTypeRightMouseDown": 3, \
+            "NSEventTypeRightMouseUp": 4, \
+            "NSEventTypeMouseMoved": 5, \
+            "NSEventTypeLeftMouseDragged": 6, \
+            "NSEventTypeRightMouseDragged": 7, \
+            "NSEventTypeMouseEntered": 8, \
+            "NSEventTypeMouseExited": 9, \
+            "NSEventTypeKeyDown": 10, \
+            "NSEventTypeKeyUp": 11, \
+            "NSEventTypeFlagsChanged": 12, \
+            "NSEventTypeAppKitDefined": 13, \
+            "NSEventTypeSystemDefined": 14, \
+            "NSEventTypeApplicationDefined": 15, \
+            "NSEventTypePeriodic": 16, \
+            "NSEventTypeCursorUpdate": 17, \
+            "NSEventTypeRotate": 18, \
+            "NSEventTypeBeginGesture": 19, \
+            "NSEventTypeEndGesture": 20, \
+            "NSEventTypeScrollWheel": 22, \
+            "NSEventTypeTabletPoint": 23, \
+            "NSEventTypeTabletProximity": 24, \
+            "NSEventTypeOtherMouseDown": 25, \
+            "NSEventTypeOtherMouseUp": 26, \
+            "NSEventTypeOtherMouseDragged": 27, \
+            "NSEventTypeGesture": 29, \
+            "NSEventTypeMagnify": 30, \
+            "NSEventTypeSwipe": 31, \
+            "NSEventTypeSmartMagnify": 32, \
+            "NSEventTypeQuickLook": 33, \
+            "NSEventTypePressure": 34, \
+            "NSEventTypeDirectTouch": 37 \
+            }
+  end handler
+
+end library
