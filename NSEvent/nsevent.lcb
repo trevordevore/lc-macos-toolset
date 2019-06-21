@@ -36,6 +36,9 @@ library com.livecode.extensions.trevordevore.nsevent
   public foreign type Block binds to "MCAggregateTypeInfo:rEErr"
   type BlockPointer is Pointer
 
+  foreign handler BlockPointerToBlock(out rBlock as Block, in pPointer as BlockPointer, \
+        in pSize as UIntSize) returns nothing binds to "c:memcpy"
+
   foreign handler MCHandlerGetFunctionPtr(in pHandler as any, out rPtr as Pointer) returns CBool binds to "<builtin>"
 
   private foreign handler CopyBlockDescriptor(inout pBlock as BlockDescriptor, in pSize as UIntSize, out rNewBlock as Pointer) returns CBool binds to "MCMemoryAllocateCopy"
@@ -81,7 +84,9 @@ library com.livecode.extensions.trevordevore.nsevent
 
   private handler DeleteBlockPointer(in pBlockPointer as BlockPointer)
     unsafe
-      DeleteBlockDescriptorPointer(pBlockPointer)
+      variable tBlock as Block
+      BlockPointerToBlock(tBlock, pBlockPointer, kBlockSize)
+      MCMemoryDelete(tBlock[5])
       MCMemoryDelete(pBlockPointer)
     end unsafe
   end handler
