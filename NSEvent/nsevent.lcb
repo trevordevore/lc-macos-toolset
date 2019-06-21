@@ -110,27 +110,16 @@ library com.livecode.extensions.trevordevore.nsevent
 
   private foreign handler ObjC_NSEventWindow (in pEvent as ObjcId) \
         returns optional ObjcId \
-        binds to "objc:NSEvent.-window"
-
-  -- private foreign handler ObjC_NSEventMouseLocation (in pEvent as ObjcId) \
-  --       returns NSPoint \
-  --       binds to "objc:NSEvent.-mouseLocation"
-
-  private foreign handler ObjC_NSEventButtonNumber (in pEvent as ObjcId) \
-        returns CLong \
-        binds to "objc:NSEvent.-buttonNumber"
+        binds to "objc:NSEvent.window"
 
   private foreign handler ObjC_NSEventLocationInWindow (in pEvent as ObjcId) \
         returns NSPoint \
-        binds to "objc:NSEvent.-locationInWindow"
+        binds to "objc:NSEvent.locationInWindow"
 
   private foreign handler ObjC_NSEventType (in pEvent as ObjcId) \
         returns CULongLong \
-        binds to "objc:NSEvent.-type"
+        binds to "objc:NSEvent.type"
 
-  private foreign handler ObjC_NSEventTimestamp (in pEvent as ObjcId) \
-        returns CDouble \
-        binds to "objc:NSEvent.-timestamp"
 
 
   /**
