@@ -103,9 +103,29 @@ library com.livecode.extensions.trevordevore.nsevent
         returns nothing \
         binds to "objc:NSEvent.+removeMonitor:"
 
-  private foreign handler ObjC_NSEventMouseLocation (in pEvent as ObjcId) \
+  private foreign handler ObjC_NSEventWindow (in pEvent as ObjcId) \
+        returns optional ObjcId \
+        binds to "objc:NSEvent.-window"
+
+  -- private foreign handler ObjC_NSEventMouseLocation (in pEvent as ObjcId) \
+  --       returns NSPoint \
+  --       binds to "objc:NSEvent.-mouseLocation"
+
+  private foreign handler ObjC_NSEventButtonNumber (in pEvent as ObjcId) \
+        returns CLong \
+        binds to "objc:NSEvent.-buttonNumber"
+
+  private foreign handler ObjC_NSEventLocationInWindow (in pEvent as ObjcId) \
         returns NSPoint \
-        binds to "objc:NSEvent.+mouseLocation"
+        binds to "objc:NSEvent.-locationInWindow"
+
+  private foreign handler ObjC_NSEventType (in pEvent as ObjcId) \
+        returns CULongLong \
+        binds to "objc:NSEvent.-type"
+
+  private foreign handler ObjC_NSEventTimestamp (in pEvent as ObjcId) \
+        returns CDouble \
+        binds to "objc:NSEvent.-timestamp"
 
 
   /**
@@ -129,6 +149,8 @@ library com.livecode.extensions.trevordevore.nsevent
 
 
   public handler NSEventCleanup() returns nothing
+    removeGlobalMonitor()
+
     if mNSEventHandlerTypeBlock is not nothing then
       unsafe
         DeleteBlockPointer(mNSEventHandlerTypeBlock)
@@ -169,11 +191,16 @@ library com.livecode.extensions.trevordevore.nsevent
   Returns: nothing
   */
   public handler NSEventRemoveGlobalMonitor() returns nothing
+    removeGlobalMonitor()
+  end handler
+
+
+  private handler removeGlobalMonitor() returns nothing
     if mNSEventMonitor is not nothing then
       unsafe
         ObjC_NSEventRemoveMonitor(mNSEventMonitor)
+        put nothing into mNSEventMonitor
       end unsafe
-      put nothing into mNSEventMonitor
     end if
   end handler
 
@@ -181,20 +208,32 @@ library com.livecode.extensions.trevordevore.nsevent
   /**
   Summary: NSEvent Global Monitor Callback handler.
 
+  Description:
+  This code is currently writen for mouse events.
+
   Returns: nothing
   */
   public handler NSEventGlobalMonitorCallback(in pBlock as BlockPointer, in pEvent as ObjcId) returns nothing
-    variable tMouseLoc as NSPoint
+    variable tClickLoc as NSPoint
+    variable tWindow as optional ObjcObject
+    variable tX as String
+    variable tY as String
 
-    // TODO: This code DOES NOT work. Haven't found a way to get properties from NSEvent.
-    //       Tried modifying parameters but no luck. What is going on?
     unsafe
-      put ObjC_NSEventMouseLocation(pEvent) into tMouseLoc
+      // TODO: The y coordinate is flipped and starts at bottom of screen.
+      //       Need to flip it before sending to LCS.
+      put ObjC_NSEventWindow(pEvent) into tWindow
+      put ObjC_NSEventLocationInWindow(pEvent) into tClickLoc
+      if tWindow is not nothing then
+        // Window always seems to be NULL in this event
+        log "need to convert"
+      end if
     end unsafe
 
-    log tMouseLoc
+    format element 1 of tClickLoc as string into tX
+    format element 2 of tClickLoc as string into tY
 
-    -- post "NSEventGlobalMonitorCallback"
+    post "NSEventGlobalMonitorCallback" with [tX & "," & tY]
   end handler
 
 
