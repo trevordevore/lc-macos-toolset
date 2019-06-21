@@ -120,6 +120,11 @@ library com.livecode.extensions.trevordevore.nsevent
         returns CULongLong \
         binds to "objc:NSEvent.type"
 
+  /*
+  Test:
+  put NSEventInitialize()
+  put NSEventAddGlobalMonitorForEventsMatchingMask("NSEventTypeLeftMouseDown")
+  */
 
 
   /**
