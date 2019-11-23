@@ -125,22 +125,32 @@ library community.livecode.trevordevore.nsworkspace
   /**
   Summary: Returns the process identifier (pid) of the frontmost application.
 
-  Returns: Integer
+  Parameters:
+  pReturnType: `bundle id`, `process id`. Default is `bundle id`.
+
+  Returns: Any
   */
-	public handler NSWorkspaceGetFrontmostApplication() returns Integer
+	public handler NSWorkspaceGetFrontmostApplication(in pReturnType as String) returns any
 		variable sharedWorkspace as ObjcObject
 		variable runningApplication as optional ObjcObject
-    variable tPid as Integer
+    variable tReturnVal as optional ObjcObject
 
 		unsafe
 			put ObjC_NSWorkspaceSharedWorkspace() into sharedWorkspace
 			put ObjC_NSWorkspaceFrontmostApplication(sharedWorkspace) into runningApplication
 
       if runningApplication is not nothing then
-        put ObjC_NSRunningApplicationProcessIdentifier(runningApplication) into tPid
+        if pReturnType is "process id" then
+          return ObjC_NSRunningApplicationProcessIdentifier(runningApplication)
+        else
+          put ObjC_NSRunningApplicationBundleIdentifier(runningApplication) into tReturnVal
+          if tReturnVal is not nothing then
+            return StringFromNSString(tReturnVal)
+          end if
+        end if
       end if
 		end unsafe
 
-    return tPid
+    return ""
   end handler
 end library
