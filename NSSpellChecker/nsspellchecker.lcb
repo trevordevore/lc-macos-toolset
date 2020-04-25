@@ -45,7 +45,7 @@ library community.livecode.trevordevore.nsspellchecker
   private foreign handler ObjC_NSSpellCheckerGetLanguage (in pObj as ObjcId) \
         returns ObjcId binds to "objc:NSSpellChecker.-language"
   private foreign handler ObjC_NSSpellCheckerSetLanguage (in pObj as ObjcId, in pLangCode as ObjcId) \
-        returns nothing binds to "objc:NSSpellChecker.-setLanguage:"
+        returns CBool binds to "objc:NSSpellChecker.-setLanguage:"
 
   private foreign handler ObjC_NSSpellCheckerCountWordsInString (in pObj as ObjcId, in pString as ObjcId, in pLangCode as ObjcId) \
         returns CInt binds to "objc:NSSpellChecker.-countWordsInString:language:"
@@ -368,14 +368,16 @@ library community.livecode.trevordevore.nsspellchecker
   pLangCode: The language to use for spell check.
 
   Description:
+  Return true if the language is available in the pop-up list. False otherwise.
+
   See the following url for language code information:
   https://developer.apple.com/library/content/documentation/MacOSX/Conceptual/BPInternational/LanguageandLocaleIDs/LanguageandLocaleIDs.html#//apple_ref/doc/uid/10000171i-CH15-SW1
 
   Returns: nothing
   */
-  public handler NSSpellCheckerSetLanguage(in pLangCode as String) returns nothing
+  public handler NSSpellCheckerSetLanguage(in pLangCode as String) returns Boolean
     unsafe
-      ObjC_NSSpellCheckerSetLanguage(_sharedObject(), StringToNSString(pLangCode))
+      return ObjC_NSSpellCheckerSetLanguage(_sharedObject(), StringToNSString(pLangCode))
     end unsafe
   end handler
 
